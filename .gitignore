@@ -1,0 +1,29 @@
+# Build artifacts
+/cmake-build-debug/
+*.o
+*.obj
+*.a
+*.so
+*.dll
+*.lib
+*.exe
+
+# IDE-specific files
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# OS-generated files
+.DS_Store
+Thumbs.db
+
+# Dependency management files
+*.lock
+*.cmake
+CMakeFiles/
+
+# Temporary files
+*.tmp
+*.swp
+*.bak

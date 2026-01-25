@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+// 定义包名，防止类名冲突
+package helloworld;
+
+// Java 特定的生成选项
+option java_multiple_files = true;
+option java_package = "com.github.churunfa.switchautoweb.helloworld";
+option java_outer_classname = "HelloWorldProto";
+
+// 1. 定义服务
+service Greeter {
+  // 发送问候
+  rpc SayHello (HelloRequest) returns (HelloReply) {}
+}
+
+// 2. 定义请求消息
+message HelloRequest {
+  string name = 1;
+}
+
+// 3. 定义响应消息
+message HelloReply {
+  string message = 1;
+}
