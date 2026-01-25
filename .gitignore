@@ -27,3 +27,5 @@ CMakeFiles/
 *.tmp
 *.swp
 *.bak
+
+generated

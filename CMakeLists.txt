@@ -22,8 +22,17 @@ find_package(Protobuf CONFIG REQUIRED)
 find_package(gRPC CONFIG REQUIRED)
 
 # ---------------------------------------------------------
-# 2. 定义 Proto 编译逻辑 (最关键的部分)
+# 2. 定义 Proto 编译逻辑
 # ---------------------------------------------------------
+
+set(GEN_BASE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/generated")
+set(GEN_CPP_PATH  "${GEN_BASE_PATH}/cpp")
+set(GEN_GRPC_PATH "${GEN_BASE_PATH}/grpc")
+
+# 物理创建子目录
+file(MAKE_DIRECTORY ${GEN_CPP_PATH})
+file(MAKE_DIRECTORY ${GEN_GRPC_PATH})
+
 # 找到 protoc 编译器和 grpc_cpp_plugin 插件的可执行路径
 set(_PROTOBUF_PROTOC $<TARGET_FILE:protobuf::protoc>)
 set(_GRPC_CPP_PLUGIN_EXECUTABLE $<TARGET_FILE:gRPC::grpc_cpp_plugin>)
@@ -33,31 +42,31 @@ file(GLOB_RECURSE PROTO_FILES "proto/*.proto")
 
 # 创建一个列表来存放即将生成的 .pb.cc 和 .grpc.pb.cc 文件路径
 set(PROTO_GEN_SRCS "")
-set(PROTO_GEN_HDRS ""
-        src/repo/DatabaseManager.h
-)
+set(PROTO_GEN_HDRS "")
 
 foreach(FIL ${PROTO_FILES})
-    # 获取文件名（不带路径和后缀），例如 "bot_core"
     get_filename_component(FIL_WE ${FIL} NAME_WE)
 
-    # 定义生成文件的完整路径 (生成到构建目录 build/ 里面，保持源码目录干净)
-    set(_PROTO_SRCS "${CMAKE_CURRENT_BINARY_DIR}/${FIL_WE}.pb.cc")
-    set(_PROTO_HDRS "${CMAKE_CURRENT_BINARY_DIR}/${FIL_WE}.pb.h")
-    set(_GRPC_SRCS "${CMAKE_CURRENT_BINARY_DIR}/${FIL_WE}.grpc.pb.cc")
-    set(_GRPC_HDRS "${CMAKE_CURRENT_BINARY_DIR}/${FIL_WE}.grpc.pb.h")
+    # 1. 基础消息文件 (.pb.h/cc) 放在 cpp 目录
+    set(_PROTO_SRCS "${GEN_CPP_PATH}/${FIL_WE}.pb.cc")
+    set(_PROTO_HDRS "${GEN_CPP_PATH}/${FIL_WE}.pb.h")
 
-    # 添加编译命令
+    # 2. RPC 服务文件 (.grpc.pb.h/cc) 放在 grpc 目录
+    set(_GRPC_SRCS "${GEN_GRPC_PATH}/${FIL_WE}.grpc.pb.cc")
+    set(_GRPC_HDRS "${GEN_GRPC_PATH}/${FIL_WE}.grpc.pb.h")
+
     add_custom_command(
             OUTPUT ${_PROTO_SRCS} ${_PROTO_HDRS} ${_GRPC_SRCS} ${_GRPC_HDRS}
             COMMAND ${_PROTOBUF_PROTOC}
-            ARGS --grpc_out=${CMAKE_CURRENT_BINARY_DIR}
-            --cpp_out=${CMAKE_CURRENT_BINARY_DIR}
-            -I ${CMAKE_CURRENT_SOURCE_DIR}/proto  # <-- 关键：指定 proto 文件的根目录
+            # cpp 输出到 cpp 目录
+            ARGS --cpp_out=${GEN_CPP_PATH}
+            # grpc 输出到 grpc 目录
+            --grpc_out=${GEN_GRPC_PATH}
+            -I ${CMAKE_CURRENT_SOURCE_DIR}/proto
             --plugin=protoc-gen-grpc=${_GRPC_CPP_PLUGIN_EXECUTABLE}
             ${FIL}
             DEPENDS ${FIL}
-            COMMENT "Running C++ protocol buffer compiler on ${FIL}"
+            COMMENT "Generating split C++/gRPC files for ${FIL}"
             VERBATIM
     )
 
@@ -72,6 +81,7 @@ endforeach()
 file(GLOB_RECURSE REPO_SOURCES "src/repo/*.cpp" "src/repo/*.h" "src/repo/base/*.cpp" "src/repo/base/*.h")
 file(GLOB_RECURSE REPO_SOURCES "src/repo/combination/*.cpp" "src/repo/combination/*.h")
 file(GLOB_RECURSE EXEC_SOURCES "src/exec/base/*.cpp" "src/exec/base/*.h")
+file(GLOB_RECURSE EXEC_SOURCES "lib/*.cpp" "lib/*.h")
 
 # ---------------------------------------------------------
 # 4. 创建可执行文件
@@ -91,6 +101,8 @@ set(ALL_SOURCES
         src/repo/combination/CombinationGraph.cpp
         src/repo/combination/CombinationGraph.h
         src/exec/base/EmptyOperate.h
+        src/service/BaseOperateService.cpp
+        src/service/BaseOperateService.h
 )
 add_executable(switch_auto_core ${ALL_SOURCES})
 
@@ -100,6 +112,8 @@ add_executable(switch_auto_core ${ALL_SOURCES})
 target_include_directories(switch_auto_core PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 target_include_directories(switch_auto_core PRIVATE src)
 target_include_directories(switch_auto_core PRIVATE lib)
+target_include_directories(switch_auto_core PRIVATE ${GEN_CPP_PATH})
+target_include_directories(switch_auto_core PRIVATE ${GEN_GRPC_PATH})
 
 target_link_libraries(switch_auto_core PRIVATE
         protobuf::libprotobuf
@@ -108,3 +122,5 @@ target_link_libraries(switch_auto_core PRIVATE
         sqlite3
         sqlite_orm::sqlite_orm
 )
+
+set_directory_properties(PROPERTIES ADDITIONAL_CLEAN_FILES "${GEN_BASE_PATH}")

@@ -52,10 +52,10 @@ struct BaseOperate {
             {17, "BUTTON_L", "L", 0, "[]", default_min_time, default_min_time},
             {18, "BUTTON_ZL", "ZL", 0, "[]", default_min_time, default_min_time},
 
-            {19, "LEFT_STICK", "左遥感", 2, "[x,y]", default_min_time, default_min_time},
-            {20, "RIGHT_STICK", "右遥感", 2, "[x,y]", default_min_time, default_min_time},
+            {19, "LEFT_STICK", "左遥感", 2, "[\"x\",\"y\"]", default_min_time, default_min_time},
+            {20, "RIGHT_STICK", "右遥感", 2, "[\"x\",\"y\"]", default_min_time, default_min_time},
 
-            {21, "IMU", "体感", 6, "[accX,accY,accZ,gyroX,gyroY,gyroZ]", default_min_time, default_min_time},
+            {21, "IMU", "体感", 6, "[\"accX\",\"accY\",\"accZ\",\"gyroX\",\"gyroY\",\"gyroZ\"]", default_min_time, default_min_time},
 
             {22, "LEFT_STICK_CIRCLE", "左遥感旋转一圈", 0, "[]", default_min_time * 8, default_min_time},
             {23, "RESET_ALL", "重置所有按键", 0, "[]", default_min_time, default_min_time},
@@ -78,6 +78,7 @@ struct BaseOperate {
 };
 
 class BaseOperateRepo {
+public:
     static std::vector<BaseOperate> findAll();
     static std::optional<BaseOperate> findOneById(int id);
     static std::optional<BaseOperate> findOneByEname(std::string ename);
