@@ -8,6 +8,13 @@
 #include "OperatorStrategy.h"
 #include "repo/base/BaseOperate.h"
 
+inline bool stickValid(const int x) {
+    if (x < 0 || x > 4097) {
+        return false;
+    }
+    return true;
+}
+
 class StickOperator : public OperatorStrategy {
 public:
     bool execute(BaseOperate& base_operate, std::string& params, const bool reset) const override {
@@ -18,7 +25,13 @@ public:
                 return true;
             }
             const auto param_vector = get_param_vector(params);
-            switch_control_library.moveLeftAnalog(std::stoi(param_vector[0]), std::stoi(param_vector[1]));
+            const int x = std::stoi(param_vector[0]);
+            const int y = std::stoi(param_vector[1]);
+            if (!stickValid(x) || !stickValid(y)) {
+                throw "Invalid stick param";
+            }
+
+            switch_control_library.moveLeftAnalog(x, y);
             switch_control_library.sendReport();
             return true;
         }
@@ -29,7 +42,12 @@ public:
                 return true;
             }
             const auto param_vector = get_param_vector(params);
-            switch_control_library.moveRightAnalog(std::stoi(param_vector[0]), std::stoi(param_vector[1]));
+            const int x = std::stoi(param_vector[0]);
+            const int y = std::stoi(param_vector[1]);
+            if (!stickValid(x) || !stickValid(y)) {
+                throw "Invalid stick param";
+            }
+            switch_control_library.moveRightAnalog(x, y);
             switch_control_library.sendReport();
             return true;
         }

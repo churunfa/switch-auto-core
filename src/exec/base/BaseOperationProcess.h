@@ -7,6 +7,7 @@
 
 #include <iostream>
 #include "ButtonOperator.h"
+#include "EmptyOperate.h"
 #include "ImuOperator.h"
 #include "OperatorStrategy.h"
 #include "ResetAllOperate.h"
@@ -21,6 +22,7 @@ class BaseOperationProcess {
         strategies.push_back(std::make_unique<StickOperator>());
         strategies.push_back(std::make_unique<ImuOperator>());
         strategies.push_back(std::make_unique<ResetAllOperator>());
+        strategies.push_back(std::make_unique<EmptyOperator>());
     }
 public:
     void run(BaseOperate& base_operate, std::string& params, const bool reset) const {
@@ -29,7 +31,7 @@ public:
                 return;
             }
         }
-        std::cerr << "不支持的操作类型" << base_operate.ename << std::endl;
+        throw std::out_of_range("不支持的操作类型" + base_operate.ename);
     }
     static BaseOperationProcess& getInstance() {
         static BaseOperationProcess instance;

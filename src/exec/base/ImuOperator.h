@@ -18,7 +18,7 @@ public:
             switch_control_library.resetIMU();
             switch_control_library.sendReport();
         } else {
-            auto param_vector = get_param_vector(params);
+            const auto param_vector = get_param_vector(params);
             const auto accX = static_cast<int16_t>(std::stoi(param_vector[0]));
             const auto accY = static_cast<int16_t>(std::stoi(param_vector[1]));
             const auto accZ = static_cast<int16_t>(std::stoi(param_vector[2]));

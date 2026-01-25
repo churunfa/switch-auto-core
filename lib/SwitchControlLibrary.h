@@ -78,8 +78,8 @@ private:
 
     void loop();
     void setIMUCore(int16_t accX, int16_t accY, int16_t accZ, int16_t gyroX, int16_t gyroY, int16_t gyroZ);
-    static void setAnalogX(SwitchAnalog stick, uint16_t x);
-    static void setAnalogY(SwitchAnalog stick, uint16_t y);
+    static void setAnalogX(SwitchAnalog& stick, uint16_t x);
+    static void setAnalogY(SwitchAnalog& stick, uint16_t y);
 };
 
 
