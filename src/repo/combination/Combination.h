@@ -51,9 +51,7 @@ struct CombinationNode {
             make_column("hold_time", &CombinationNode::hold_time),
             make_column("loop_cnt", &CombinationNode::loop_cnt),
 
-            unique(&CombinationNode::combination_id, &CombinationNode::id),
-            foreign_key(&CombinationNode::combination_id).references(&Combination::id),
-            foreign_key(&CombinationNode::base_operate_id).references(&BaseOperate::id)
+            unique(&CombinationNode::combination_id, &CombinationNode::id)
         );
     }
 };
@@ -74,10 +72,7 @@ struct CombinationEdge {
             make_column("from_combination_id", &CombinationEdge::from_combination_id),
             make_column("next_combination_id", &CombinationEdge::next_combination_id),
 
-            unique(&CombinationEdge::combination_id, &CombinationEdge::id),
-            foreign_key(&CombinationEdge::combination_id).references(&Combination::id),
-            foreign_key(&CombinationEdge::from_combination_id).references(&CombinationNode::id),
-            foreign_key(&CombinationEdge::next_combination_id).references(&CombinationNode::id)
+            unique(&CombinationEdge::combination_id, &CombinationEdge::id)
         );
     }
 };

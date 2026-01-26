@@ -9,28 +9,28 @@
 #include <string>
 #include <sqlite_orm/sqlite_orm.h>
 #include "base/BaseOperate.h"
+#include "base/IdGenerate.h"
 #include "combination/Combination.h"
 
 using namespace sqlite_orm;
 
-inline auto createStorage(const std::string& path) {
+inline  auto createStorage(const std::string& path) {
     return make_storage(path,
         BaseOperate::getDescription(),
         Combination::getDescription(),
         CombinationNode::getDescription(),
-        CombinationEdge::getDescription()
+        CombinationEdge::getDescription(),
+        IdGenerate::getDescription()
     );
 }
 
 using Storage = decltype(createStorage(""));
 
 class DatabaseManager {
-    std::unique_ptr<Storage> _storage;
 
     DatabaseManager() {
         try {
-            _storage = std::make_unique<Storage>(createStorage(DB_FILE_PATH));
-            _storage->sync_schema();
+            const auto _storage = createNewConnection();
             BaseOperate::initData(*_storage);
             std::cout << "数据库已初始化并完成同步。" << std::endl;
         } catch (const std::exception& e) {
@@ -39,21 +39,35 @@ class DatabaseManager {
             throw;
         }
     }
-
 public:
-    static DatabaseManager& getInstance() {
+    static std::unique_ptr<Storage> createNewConnection() {
+        try {
+            auto storage = std::make_unique<Storage>(createStorage(DB_FILE_PATH));
+            // 只有主线程或者初始化线程需要 sync_schema，
+            // 但 sqlite_orm 的 sync_schema 会安全处理“已存在”的情况
+            storage->sync_schema();
+            return storage;
+        } catch (const std::exception& e) {
+            std::cerr << "DATABASE CONNECTION ERROR: " << e.what() << std::endl;
+            throw;
+        }
+    }
+
+static DatabaseManager& getInstance() {
         static DatabaseManager instance;
         return instance;
     }
-
-    [[nodiscard]] Storage& getStorage() const { return *_storage; }
 
     // 禁止拷贝
     DatabaseManager(const DatabaseManager&) = delete;
     DatabaseManager& operator=(const DatabaseManager&) = delete;
 };
 
-inline auto& db = DatabaseManager::getInstance().getStorage();
-extern Storage& db;
+inline Storage& get_db() {
+    thread_local std::unique_ptr<Storage> local_storage = DatabaseManager::createNewConnection();
+    return *local_storage;
+}
+
+#define db get_db()
 
 #endif //SWITCH_AUTO_CORE_DATABASEMANAGER_H

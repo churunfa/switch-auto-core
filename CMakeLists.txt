@@ -24,56 +24,44 @@ find_package(gRPC CONFIG REQUIRED)
 # ---------------------------------------------------------
 # 2. 定义 Proto 编译逻辑
 # ---------------------------------------------------------
-
+# ---------------------------------------------------------
+# 2. 全量定义 Proto 编译逻辑 (避免循环调用)
+# ---------------------------------------------------------
 set(GEN_BASE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/generated")
 set(GEN_CPP_PATH  "${GEN_BASE_PATH}/cpp")
 set(GEN_GRPC_PATH "${GEN_BASE_PATH}/grpc")
 
-# 物理创建子目录
 file(MAKE_DIRECTORY ${GEN_CPP_PATH})
 file(MAKE_DIRECTORY ${GEN_GRPC_PATH})
 
-# 找到 protoc 编译器和 grpc_cpp_plugin 插件的可执行路径
 set(_PROTOBUF_PROTOC $<TARGET_FILE:protobuf::protoc>)
 set(_GRPC_CPP_PLUGIN_EXECUTABLE $<TARGET_FILE:gRPC::grpc_cpp_plugin>)
 
-# 自动扫描 proto 目录下的所有 .proto 文件
+# 扫描所有 proto 文件
 file(GLOB_RECURSE PROTO_FILES "proto/*.proto")
 
-# 创建一个列表来存放即将生成的 .pb.cc 和 .grpc.pb.cc 文件路径
 set(PROTO_GEN_SRCS "")
 set(PROTO_GEN_HDRS "")
 
+# 预先构建输出文件列表，让 CMake 知道要等这些文件生成
 foreach(FIL ${PROTO_FILES})
     get_filename_component(FIL_WE ${FIL} NAME_WE)
-
-    # 1. 基础消息文件 (.pb.h/cc) 放在 cpp 目录
-    set(_PROTO_SRCS "${GEN_CPP_PATH}/${FIL_WE}.pb.cc")
-    set(_PROTO_HDRS "${GEN_CPP_PATH}/${FIL_WE}.pb.h")
-
-    # 2. RPC 服务文件 (.grpc.pb.h/cc) 放在 grpc 目录
-    set(_GRPC_SRCS "${GEN_GRPC_PATH}/${FIL_WE}.grpc.pb.cc")
-    set(_GRPC_HDRS "${GEN_GRPC_PATH}/${FIL_WE}.grpc.pb.h")
-
-    add_custom_command(
-            OUTPUT ${_PROTO_SRCS} ${_PROTO_HDRS} ${_GRPC_SRCS} ${_GRPC_HDRS}
-            COMMAND ${_PROTOBUF_PROTOC}
-            # cpp 输出到 cpp 目录
-            ARGS --cpp_out=${GEN_CPP_PATH}
-            # grpc 输出到 grpc 目录
-            --grpc_out=${GEN_GRPC_PATH}
-            -I ${CMAKE_CURRENT_SOURCE_DIR}/proto
-            --plugin=protoc-gen-grpc=${_GRPC_CPP_PLUGIN_EXECUTABLE}
-            ${FIL}
-            DEPENDS ${FIL}
-            COMMENT "Generating split C++/gRPC files for ${FIL}"
-            VERBATIM
-    )
-
-    # 将生成的文件加入列表
-    list(APPEND PROTO_GEN_SRCS ${_PROTO_SRCS} ${_GRPC_SRCS})
-    list(APPEND PROTO_GEN_HDRS ${_PROTO_HDRS} ${_GRPC_HDRS})
+    list(APPEND PROTO_GEN_SRCS "${GEN_CPP_PATH}/${FIL_WE}.pb.cc" "${GEN_GRPC_PATH}/${FIL_WE}.grpc.pb.cc")
+    list(APPEND PROTO_GEN_HDRS "${GEN_CPP_PATH}/${FIL_WE}.pb.h" "${GEN_GRPC_PATH}/${FIL_WE}.grpc.pb.h")
 endforeach()
+
+add_custom_command(
+        OUTPUT ${PROTO_GEN_SRCS} ${PROTO_GEN_HDRS}
+        COMMAND ${_PROTOBUF_PROTOC}
+        ARGS --cpp_out=${GEN_CPP_PATH}
+        --grpc_out=${GEN_GRPC_PATH}
+        -I ${CMAKE_CURRENT_SOURCE_DIR}/proto
+        --plugin=protoc-gen-grpc=${_GRPC_CPP_PLUGIN_EXECUTABLE}
+        ${PROTO_FILES}  # 这里传入整个文件列表
+        DEPENDS ${PROTO_FILES}
+        COMMENT "Generating ALL Proto/gRPC files at once to ensure table consistency"
+        VERBATIM
+)
 
 # ---------------------------------------------------------
 # 3. 准备源文件
@@ -109,6 +97,8 @@ set(ALL_SOURCES
         src/service/mapper/CombinationGraphMapper.h
         src/service/mapper/BaseOperateMapper.cpp
         src/service/mapper/CombinationGraphMapper.cpp
+        src/repo/base/IdGenerate.h
+        src/repo/base/IdGenerate.cpp
 )
 add_executable(switch_auto_core ${ALL_SOURCES})
 

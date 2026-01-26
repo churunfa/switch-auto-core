@@ -43,29 +43,30 @@ void CombinationRepo::deleteGraph(const int combination_id) {
     }
 }
 
-Combination copyCombination(Combination * const & combination) {
+Combination copyCombination(const std::optional<const Combination>& combination) {
     return Combination(*combination);
 }
 
 std::vector<CombinationNode> copyCombinationNodes(const std::vector<const CombinationNode*> combination_nodes) {
     std::vector<CombinationNode> combination_nodes_copy;
-    for (auto combination_node : combination_nodes) {
-        combination_nodes_copy.push_back(CombinationNode(*combination_node));
+    for (const auto combination_node : combination_nodes) {
+        combination_nodes_copy.emplace_back(*combination_node);
     }
     return combination_nodes_copy;
 }
 
 std::vector<CombinationEdge> copyCombinationEdges(const std::vector<const CombinationEdge*> combination_edges) {
     std::vector<CombinationEdge> combination_edges_copy;
-    for (auto combination_edge : combination_edges) {
-        combination_edges_copy.push_back(CombinationEdge(*combination_edge));
+    combination_edges_copy.reserve(combination_edges.size());
+    for (const auto combination_edge : combination_edges) {
+        combination_edges_copy.emplace_back(*combination_edge);
     }
     return combination_edges_copy;
 }
 
 
 void updateOrSaveGraphCore(const CombinationGraph &graph, const bool insert) {
-    Combination * const & combination = graph.getCombination();
+    const std::optional<const Combination>& combination = graph.getCombination();
     const std::vector<const CombinationNode*> combination_nodes = graph.getCombinationNode();
     const std::vector<const CombinationEdge*> combination_edges = graph.getCombinationEdge();
 
@@ -74,21 +75,16 @@ void updateOrSaveGraphCore(const CombinationGraph &graph, const bool insert) {
     auto copy_edges = copyCombinationEdges(combination_edges);
 
     try {
+        int combination_id = combination -> id;
+        if (insert) {
+             combination_id = IdGenerateRepo::generateId("combination");
+        }
         db.transaction([&] {
             if (!insert) {
                 deleteGraphCore(combination -> id);
             }
+            copy_combination.id = combination_id;
             db.insert(copy_combination);
-
-            const auto ptr = db.get_pointer<Combination>(
-                        where(
-                            c(&Combination::project_name) == copy_combination.project_name
-                            and
-                            c(&Combination::combination_name) == copy_combination.combination_name
-                        )
-                    );
-            if (!ptr) return false;
-            copy_combination.id = ptr -> id;
 
             for (auto& node : copy_nodes) {
                 node.combination_id = copy_combination.id;
@@ -103,6 +99,7 @@ void updateOrSaveGraphCore(const CombinationGraph &graph, const bool insert) {
         });
     } catch (const std::exception& e) {
         std::cerr << "Transaction failed: " << e.what() << std::endl;
+        throw std::out_of_range("写入失败");
     }
 }
 
@@ -132,23 +129,26 @@ std::vector<CombinationNode> allCombinationNode(const int combination_id) {
 }
 
 std::vector<CombinationEdge> allCombinationEdge(const int combination_id) {
-    auto edges = db.get_all<CombinationEdge>(where(c(&CombinationEdge::combination_id) == combination_id));
-    for (const auto& edge : edges) {
-        if (auto ptr = db.get_pointer<CombinationNode>(edge.from_combination_id)) edge.from_combination_node = std::move(ptr);
-        if (auto ptr = db.get_pointer<CombinationNode>(edge.next_combination_id)) edge.next_combination_node = std::move(ptr);
-        if (auto ptr = db.get_pointer<Combination>(edge.combination_id)) edge.combination = std::move(ptr);
+    const auto edges = db.get_all<CombinationEdge>(where(c(&CombinationEdge::combination_id) == combination_id));
+    const auto nodes = db.get_all<CombinationNode>(where(c(&CombinationNode::combination_id) == combination_id));
+    auto combination = db.get_pointer<Combination>(combination_id);
+    std::map<int, CombinationNode> node_map;
+    for (const auto& node : nodes) {
+        node_map[node.id] = node;
+    }
+    for (auto& edge : edges) {
+        edge.from_combination_node = std::make_shared<CombinationNode>(node_map.at(edge.from_combination_id));
+        edge.next_combination_node = std::make_shared<CombinationNode>(node_map.at(edge.next_combination_id));
+        edge.combination = std::move(combination);
     }
     return edges;
 }
 
 std::optional<CombinationGraph> CombinationRepo::getGraphById(const int id) {
-    const auto combination = db.get_pointer<Combination>(id);
-    if (!combination) {
-        return std::nullopt;
-    }
+    auto combination = db.get<Combination>(id);
     const auto combination_nodes = allCombinationNode(id);
     const auto combination_edges = allCombinationEdge(id);
-    return CombinationGraph(*combination, combination_nodes, combination_edges);
+    return CombinationGraph(combination, combination_nodes, combination_edges);
 }
 
 std::optional<CombinationGraph> CombinationRepo::getGraphByName(const std::string &project_name, const std::string &combination_name) {
@@ -163,7 +163,7 @@ std::optional<CombinationGraph> CombinationRepo::getGraphByName(const std::strin
 
 
 CombinationGraph::CombinationGraph(Combination& combination, const std::vector<CombinationNode>& nodes, const std::vector<CombinationEdge>& edges) {
-    this->combination = &combination;
+    this->combination = combination;
     for (const auto& node : nodes) {
         this -> node_map[node.id] = node;
         if (node.base_operate -> ename == "START_EMPTY") {
@@ -185,7 +185,7 @@ CombinationGraph::CombinationGraph(Combination& combination, const std::vector<C
     }
 }
 
-Combination *CombinationGraph::getCombination() const {
+const std::optional<Combination>& CombinationGraph::getCombination() const {
     return combination;
 }
 

@@ -11,7 +11,7 @@ struct CombinationNode;
 struct CombinationEdge;
 
 class CombinationGraph {
-    Combination* combination = nullptr;
+    std::optional<Combination> combination = std::nullopt;
     std::optional<CombinationNode> start_node = std::nullopt;
     std::optional<CombinationNode> end_node = std::nullopt;
 
@@ -22,7 +22,7 @@ class CombinationGraph {
 
 public:
     CombinationGraph(Combination& combination, const std::vector<CombinationNode>& nodes, const std::vector<CombinationEdge>& edges);
-    Combination* getCombination() const;
+    const std::optional<Combination>& getCombination() const;
     const std::optional<CombinationNode>& getStartNode() const;
     const std::optional<CombinationNode>& getEndNode() const;
     std::vector<const CombinationNode*> getCombinationNode() const;
@@ -37,7 +37,7 @@ class CombinationRepo {
 public:
     static void insertGraph(const CombinationGraph &graph);
     static void updateGraph(const CombinationGraph &graph);
-    static void deleteGraph(const int combination_id);
+    static void deleteGraph(int combination_id);
     static std::vector<std::string> allProject();
     static std::vector<Combination> allGraph(const std::string &project_name);
     static std::optional<CombinationGraph> getGraphById(int id);
