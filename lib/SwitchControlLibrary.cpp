@@ -167,27 +167,59 @@ void SwitchControlLibrary::resetIMU() {
 }
 
 void SwitchControlLibrary::setAnalogX(SwitchAnalog& stick, const uint16_t x) {
-    uint16_t standard_x = std::min(x, static_cast<uint16_t>(4097));
-    standard_x = std::max(standard_x, static_cast<uint16_t>(0));
-
     uint8_t *data = stick.data;
-    data[0] = standard_x & 0xFF;
-    data[1] = (data[1] & 0xF0) | ((standard_x >> 8) & 0x0F);
+    data[0] = x & 0xFF;
+    data[1] = (data[1] & 0xF0) | ((x >> 8) & 0x0F);
 }
 
 void SwitchControlLibrary::setAnalogY(SwitchAnalog& stick, const uint16_t y) {
-    uint16_t standard_y = std::min(y, static_cast<uint16_t>(4097));
-    standard_y = std::max(standard_y, static_cast<uint16_t>(0));
-
     uint8_t *data = stick.data;
-    data[1] = (data[1] & 0x0F) | ((standard_y & 0x0F) << 4);
-    data[2] = (standard_y >> 4) & 0xFF;
+    data[1] = (data[1] & 0x0F) | ((y & 0x0F) << 4);
+    data[2] = (y >> 4) & 0xFF;
 }
 
-void SwitchControlLibrary::moveLeftAnalog(const uint16_t x, const uint16_t y) {
+// 左摇杆
+// 左下 -> (-2047,-2047) -> (1, 4095)
+// 右上 -> (2047, 2047) -> (4095, 1)
+uint16_t left_standard_x(int x) {
+    // 标准化到 -2047 ~ 2047
+    x = std::min(x, 2047);
+    x = std::max(x, -2047);
+    // 坐标转化
+    return x + 2048;
+}
+
+uint16_t left_standard_y(int y) {
+    // 标准化到 -2047 ~ 2047
+    y = std::min(y, 2047);
+    y = std::max(y, -2047);
+    // 坐标转化
+    return 2048 - y;
+}
+
+// 右摇杆
+// 左下 -> (-2047,-2047) -> (1, 1)
+// 右上 -> (2047, 2047) -> (4095, 4095)
+uint16_t right_standard_x(int x) {
+    // 标准化到 -2047 ~ 2047
+    x = std::min(x, 2047);
+    x = std::max(x, -2047);
+    // 坐标转化
+    return x + 2048;
+}
+
+uint16_t right_standard_y(int y) {
+    // 标准化到 -2047 ~ 2047
+    y = std::min(y, 2047);
+    y = std::max(y, -2047);
+    // 坐标转化
+    return y + 2048;
+}
+
+void SwitchControlLibrary::moveLeftAnalog(const int x, const int y) {
     std::lock_guard<std::recursive_mutex> lock(reportMtx);
-    setAnalogX(switchReport.leftStick, x);
-    setAnalogY(switchReport.leftStick, y);
+    setAnalogX(switchReport.leftStick, left_standard_x(x));
+    setAnalogY(switchReport.leftStick, left_standard_y(y));
 }
 
 void SwitchControlLibrary::resetLeftAnalog() {
@@ -195,10 +227,10 @@ void SwitchControlLibrary::resetLeftAnalog() {
     moveLeftAnalog(2048, 2048);
 }
 
-void SwitchControlLibrary::moveRightAnalog(const uint16_t x, const uint16_t y) {
+void SwitchControlLibrary::moveRightAnalog(const int x, const int y) {
     std::lock_guard<std::recursive_mutex> lock(reportMtx);
-    setAnalogX(switchReport.rightStick, x);
-    setAnalogY(switchReport.rightStick, y);
+    setAnalogX(switchReport.rightStick, right_standard_x(x));
+    setAnalogY(switchReport.rightStick, right_standard_y(y));
 }
 
 void SwitchControlLibrary::resetRightAnalog() {

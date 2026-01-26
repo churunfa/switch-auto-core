@@ -8,11 +8,11 @@
 #include "OperatorStrategy.h"
 #include "repo/base/BaseOperate.h"
 
-inline bool stickValid(const int x) {
-    if (x < 0 || x > 4097) {
-        return false;
-    }
-    return true;
+// 1~2048~4095 --> -2047~0~2047
+inline int standard(const int x) {
+    int standard_x = std::min(x, 2047);
+    standard_x = std::max(standard_x, -2047);
+    return standard_x;
 }
 
 class StickOperator : public OperatorStrategy {
@@ -25,11 +25,8 @@ public:
                 return true;
             }
             const auto param_vector = get_param_vector(params);
-            const int x = std::stoi(param_vector[0]);
-            const int y = std::stoi(param_vector[1]);
-            if (!stickValid(x) || !stickValid(y)) {
-                throw "Invalid stick param";
-            }
+            const int x = standard(std::stoi(param_vector[0]));
+            const int y = standard(std::stoi(param_vector[1]));
 
             switch_control_library.moveLeftAnalog(x, y);
             switch_control_library.sendReport();
@@ -42,11 +39,8 @@ public:
                 return true;
             }
             const auto param_vector = get_param_vector(params);
-            const int x = std::stoi(param_vector[0]);
-            const int y = std::stoi(param_vector[1]);
-            if (!stickValid(x) || !stickValid(y)) {
-                throw "Invalid stick param";
-            }
+            const int x = standard(std::stoi(param_vector[0]));
+            const int y = standard(std::stoi(param_vector[1]));
             switch_control_library.moveRightAnalog(x, y);
             switch_control_library.sendReport();
             return true;

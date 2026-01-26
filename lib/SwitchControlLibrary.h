@@ -46,11 +46,11 @@ public:
     ~SwitchControlLibrary();
     void pressButton(ButtonType button);
     void releaseButton(ButtonType button);
-    // 左摇杆，x,y -> 0~4096; 居中：2048
-    void moveLeftAnalog(uint16_t x, uint16_t y);
+    // 左摇杆，使用笛卡尔坐标系，x,y -> -2047~2047; 居中：0
+    void moveLeftAnalog(int x, int y);
     void resetLeftAnalog();
-    // 右摇杆，x,y -> 0~4096; 居中：2048
-    void moveRightAnalog(uint16_t x, uint16_t y);
+    // 右摇杆，使用笛卡尔坐标系，x,y -> -2047~2047; 居中：0
+    void moveRightAnalog(int x, int y);
     void resetRightAnalog();
     // 体感角速度和加速度
     void setIMU(int16_t accX, int16_t accY, int16_t accZ, int16_t gyroX, int16_t gyroY, int16_t gyroZ);
