@@ -35,11 +35,13 @@ public:
 
 class CombinationRepo {
 public:
-    static void saveOrUpdateGroup(const CombinationGraph &graph);
+    static void insertGraph(const CombinationGraph &graph);
+    static void updateGraph(const CombinationGraph &graph);
+    static void deleteGraph(const int combination_id);
     static std::vector<std::string> allProject();
     static std::vector<Combination> allGraph(const std::string &project_name);
     static std::optional<CombinationGraph> getGraphById(int id);
-    static std::optional<CombinationGraph> getGraphByName(std::string project_name, std::string combination_name);
+    static std::optional<CombinationGraph> getGraphByName(const std::string &project_name, const std::string &combination_name);
 };
 
 #endif //SWITCH_AUTO_CORE_COMBINATIONGRAPH_H

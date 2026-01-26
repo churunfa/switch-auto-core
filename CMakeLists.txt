@@ -103,6 +103,12 @@ set(ALL_SOURCES
         src/exec/base/EmptyOperate.h
         src/service/BaseOperateService.cpp
         src/service/BaseOperateService.h
+        src/service/CombinationGraphService.cpp
+        src/service/CombinationGraphService.h
+        src/service/mapper/BaseOperateMapper.h
+        src/service/mapper/CombinationGraphMapper.h
+        src/service/mapper/BaseOperateMapper.cpp
+        src/service/mapper/CombinationGraphMapper.cpp
 )
 add_executable(switch_auto_core ${ALL_SOURCES})
 

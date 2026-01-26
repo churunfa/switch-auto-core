@@ -20,7 +20,7 @@ namespace service {
         grpc::Status ExecBaseOperate(
             grpc::ServerContext* context,
             const base::operate::ExecBaseOperateRequest* request,
-            base::operate::ExecBaseOperateResponse* response) override;
+            base::SimpleResponse* response) override;
     };
 
 } // namespace service

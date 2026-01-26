@@ -8,47 +8,110 @@
 
 #include "repo/DatabaseManager.h"
 
-void CombinationRepo::saveOrUpdateGroup(const CombinationGraph &graph) {
+void deleteGraphCore(const int combination_id) {
+    const auto combination = db.get_pointer<Combination>(combination_id);
+    if (!combination) {
+        return;
+    }
+    // 删除边
+    db.remove_all<CombinationEdge>(
+    where(
+        c(&CombinationEdge::combination_id) == combination->id
+        )
+    );
+    // 删除节点
+    db.remove_all<CombinationNode>(
+    where(
+        c(&CombinationNode::combination_id) == combination->id
+        )
+    );
+    // 删除整体信息
+    db.remove_all<Combination>(
+    where(
+        c(&Combination::project_name) == combination->project_name
+        and
+        c(&Combination::combination_name) == combination->combination_name
+        )
+    );
+}
+
+void CombinationRepo::deleteGraph(const int combination_id) {
+    try {
+        deleteGraphCore(combination_id);
+    } catch (const std::exception& e) {
+        std::cerr << "Transaction failed: " << e.what() << std::endl;
+    }
+}
+
+Combination copyCombination(Combination * const & combination) {
+    return Combination(*combination);
+}
+
+std::vector<CombinationNode> copyCombinationNodes(const std::vector<const CombinationNode*> combination_nodes) {
+    std::vector<CombinationNode> combination_nodes_copy;
+    for (auto combination_node : combination_nodes) {
+        combination_nodes_copy.push_back(CombinationNode(*combination_node));
+    }
+    return combination_nodes_copy;
+}
+
+std::vector<CombinationEdge> copyCombinationEdges(const std::vector<const CombinationEdge*> combination_edges) {
+    std::vector<CombinationEdge> combination_edges_copy;
+    for (auto combination_edge : combination_edges) {
+        combination_edges_copy.push_back(CombinationEdge(*combination_edge));
+    }
+    return combination_edges_copy;
+}
+
+
+void updateOrSaveGraphCore(const CombinationGraph &graph, const bool insert) {
     Combination * const & combination = graph.getCombination();
     const std::vector<const CombinationNode*> combination_nodes = graph.getCombinationNode();
     const std::vector<const CombinationEdge*> combination_edges = graph.getCombinationEdge();
 
+    auto copy_combination = copyCombination(combination);
+    auto copy_nodes = copyCombinationNodes(combination_nodes);
+    auto copy_edges = copyCombinationEdges(combination_edges);
+
     try {
         db.transaction([&] {
-            // 删除边
-            db.remove_all<CombinationEdge>(
-            where(
-                c(&CombinationEdge::combination_id) == combination->id
-                )
-            );
-            // 删除节点
-            db.remove_all<CombinationNode>(
-            where(
-                c(&CombinationNode::combination_id) == combination->id
-                )
-            );
-            // 删除整体信息
-            db.remove_all<Combination>(
-            where(
-                c(&Combination::project_name) == combination->project_name
-                and
-                c(&Combination::combination_name) == combination->combination_name
-                )
-            );
+            if (!insert) {
+                deleteGraphCore(combination -> id);
+            }
+            db.insert(copy_combination);
 
-            db.insert(*combination);
-            for (const auto& combination_node : combination_nodes) {
-                db.insert(*combination_node);
+            const auto ptr = db.get_pointer<Combination>(
+                        where(
+                            c(&Combination::project_name) == copy_combination.project_name
+                            and
+                            c(&Combination::combination_name) == copy_combination.combination_name
+                        )
+                    );
+            if (!ptr) return false;
+            copy_combination.id = ptr -> id;
+
+            for (auto& node : copy_nodes) {
+                node.combination_id = copy_combination.id;
+                db.insert(node);
             }
 
-            for (const auto& combination_edge : combination_edges) {
-                db.insert(*combination_edge);
+            for (auto& edge : copy_edges) {
+                edge.combination_id = copy_combination.id;
+                db.insert(edge);
             }
             return true; // 提交事务
         });
     } catch (const std::exception& e) {
         std::cerr << "Transaction failed: " << e.what() << std::endl;
     }
+}
+
+void CombinationRepo::insertGraph(const CombinationGraph &graph) {
+    updateOrSaveGraphCore(graph, true);
+}
+
+void CombinationRepo::updateGraph(const CombinationGraph &graph) {
+    updateOrSaveGraphCore(graph, false);
 }
 
 std::vector<std::string> CombinationRepo::allProject() {
@@ -88,8 +151,8 @@ std::optional<CombinationGraph> CombinationRepo::getGraphById(const int id) {
     return CombinationGraph(*combination, combination_nodes, combination_edges);
 }
 
-std::optional<CombinationGraph> CombinationRepo::getGraphByName(std::string project_name, std::string combination_name) {
-    auto combination =
+std::optional<CombinationGraph> CombinationRepo::getGraphByName(const std::string &project_name, const std::string &combination_name) {
+    const auto combination =
         db.get_pointer<Combination>(where(
             c(&Combination::project_name) == project_name)
             and
@@ -122,7 +185,7 @@ CombinationGraph::CombinationGraph(Combination& combination, const std::vector<C
     }
 }
 
-Combination* CombinationGraph::getCombination() const {
+Combination *CombinationGraph::getCombination() const {
     return combination;
 }
 

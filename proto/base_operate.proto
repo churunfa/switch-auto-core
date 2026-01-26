@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package base.operate;
 
+import "base.proto";
 import "google/protobuf/empty.proto";
 
 option java_multiple_files = true;
@@ -10,7 +11,7 @@ option java_outer_classname = "BaseOperateProto";
 
 service BaseOperateService {
     rpc GetAllBaseOperates (google.protobuf.Empty) returns (GetAllBaseOperatesResponse) {}
-    rpc ExecBaseOperate (ExecBaseOperateRequest) returns (ExecBaseOperateResponse){}
+    rpc ExecBaseOperate (ExecBaseOperateRequest) returns (SimpleResponse){}
 }
 
 message BaseOperate {
@@ -19,8 +20,9 @@ message BaseOperate {
     string name = 3;
     int32 param_size = 4;
     string param_names = 5;
-    int32 min_exec_time = 6;
-    int32 min_reset_time = 7;
+    string init_params = 6;
+    int32 min_exec_time = 7;
+    int32 min_reset_time = 8;
 }
 
 message GetAllBaseOperatesResponse {
@@ -31,8 +33,4 @@ message ExecBaseOperateRequest {
     int32 id = 1;
     bool reset = 2;
     string params = 3;
-}
-
-message ExecBaseOperateResponse {
-    bool success = 1;
 }

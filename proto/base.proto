@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package base;
+
+
+option java_multiple_files = true;
+option java_package = "com.github.churunfa.switchautoweb.base";
+option java_outer_classname = "BaseProto";
+
+message SimpleResponse {
+    bool success = 1;
+}

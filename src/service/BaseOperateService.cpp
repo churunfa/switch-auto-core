@@ -5,34 +5,17 @@
 #include "BaseOperateService.h"
 
 #include "exec/base/BaseOperationProcess.h"
+#include "mapper/BaseOperateMapper.h"
 #include "repo/base/BaseOperate.h"
 
 namespace service {
-    namespace {
-        /**
-         * @brief 将数据库实体结构体转换为 Proto 消息对象
-         * @param src  源数据（C++ Struct）
-         * @param dest 目标对象（Proto Message Pointer）
-         */
-        void FillBaseOperateProto(const BaseOperate& src, base::operate::BaseOperate* dest) {
-            dest->set_id(src.id);
-            dest->set_ename(src.ename);
-            dest->set_name(src.name);
-            dest->set_param_size(src.param_size);
-            dest->set_param_names(src.param_names);
-            dest->set_min_exec_time(src.min_exec_time);
-            dest->set_min_reset_time(src.min_reset_time);
-        }
-    }
-
-
     grpc::Status BaseOperateServiceImpl::GetAllBaseOperates(
         grpc::ServerContext* context,
         const google::protobuf::Empty* request,
         base::operate::GetAllBaseOperatesResponse* response) {
         // 2. 遍历并转换
         for (const auto base_operates = BaseOperateRepo::findAll(); const auto& item : base_operates) {
-            FillBaseOperateProto(item, response->add_operates());
+            BaseOperateMapper::FillBaseOperateProto(item, response->add_operates());
         }
 
         return grpc::Status::OK;
@@ -41,7 +24,7 @@ namespace service {
     grpc::Status BaseOperateServiceImpl::ExecBaseOperate(
         grpc::ServerContext* context,
         const base::operate::ExecBaseOperateRequest* request,
-        base::operate::ExecBaseOperateResponse* response) {
+        base::SimpleResponse* response) {
         auto entity_opt = BaseOperateRepo::findOneById(request -> id());
         if (!entity_opt.has_value()) {
             return {grpc::StatusCode::NOT_FOUND, "BaseOperate ID not found"};
