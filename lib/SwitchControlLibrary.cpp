@@ -178,10 +178,7 @@ void SwitchControlLibrary::setAnalogY(SwitchAnalog& stick, const uint16_t y) {
     data[2] = (y >> 4) & 0xFF;
 }
 
-// 左摇杆
-// 左下 -> (-2047,-2047) -> (1, 4095)
-// 右上 -> (2047, 2047) -> (4095, 1)
-uint16_t left_standard_x(int x) {
+uint16_t standard_x(int x) {
     // 标准化到 -2047 ~ 2047
     x = std::min(x, 2047);
     x = std::max(x, -2047);
@@ -189,26 +186,7 @@ uint16_t left_standard_x(int x) {
     return x + 2048;
 }
 
-uint16_t left_standard_y(int y) {
-    // 标准化到 -2047 ~ 2047
-    y = std::min(y, 2047);
-    y = std::max(y, -2047);
-    // 坐标转化
-    return 2048 - y;
-}
-
-// 右摇杆
-// 左下 -> (-2047,-2047) -> (1, 1)
-// 右上 -> (2047, 2047) -> (4095, 4095)
-uint16_t right_standard_x(int x) {
-    // 标准化到 -2047 ~ 2047
-    x = std::min(x, 2047);
-    x = std::max(x, -2047);
-    // 坐标转化
-    return x + 2048;
-}
-
-uint16_t right_standard_y(int y) {
+uint16_t standard_y(int y) {
     // 标准化到 -2047 ~ 2047
     y = std::min(y, 2047);
     y = std::max(y, -2047);
@@ -218,24 +196,24 @@ uint16_t right_standard_y(int y) {
 
 void SwitchControlLibrary::moveLeftAnalog(const int x, const int y) {
     std::lock_guard<std::recursive_mutex> lock(reportMtx);
-    setAnalogX(switchReport.leftStick, left_standard_x(x));
-    setAnalogY(switchReport.leftStick, left_standard_y(y));
+    setAnalogX(switchReport.leftStick, standard_x(x));
+    setAnalogY(switchReport.leftStick, standard_x(y));
 }
 
 void SwitchControlLibrary::resetLeftAnalog() {
     std::lock_guard<std::recursive_mutex> lock(reportMtx);
-    moveLeftAnalog(2048, 2048);
+    moveLeftAnalog(0, 0);
 }
 
 void SwitchControlLibrary::moveRightAnalog(const int x, const int y) {
     std::lock_guard<std::recursive_mutex> lock(reportMtx);
-    setAnalogX(switchReport.rightStick, right_standard_x(x));
-    setAnalogY(switchReport.rightStick, right_standard_y(y));
+    setAnalogX(switchReport.rightStick, standard_x(x));
+    setAnalogY(switchReport.rightStick, standard_x(y));
 }
 
 void SwitchControlLibrary::resetRightAnalog() {
     std::lock_guard<std::recursive_mutex> lock(reportMtx);
-    moveRightAnalog(2048, 2048);
+    moveRightAnalog(0, 0);
 }
 
 SwitchControlLibrary& SwitchControlLibrary::getInstance() {
