@@ -17,13 +17,13 @@ void CombinationGraphMapper::FillCombinationProto(const Combination& src, combin
     dest->set_min_time(src.min_time);
 }
 void CombinationGraphMapper::FillEdgeProto(const CombinationEdge& src, combination::graph::CombinationEdge* dest) {
-    dest->set_id(src.id);
+    dest->set_edge_id(src.edge_id);
     dest->set_from_node_id(src.from_combination_id);
     dest->set_next_node_id(src.next_combination_id);
 }
 
 void CombinationGraphMapper::FillNodeProto(const CombinationNode& src, combination::graph::CombinationNode* dest) {
-    dest->set_id(src.id);
+    dest->set_node_id(src.node_id);
     BaseOperateMapper::FillBaseOperateProto(*src.base_operate, dest->mutable_base_operate());
     dest->set_params(src.params);
     dest->set_hold_time(src.hold_time);
@@ -42,7 +42,7 @@ Combination CombinationGraphMapper::buildCombination(const combination::graph::C
 
 CombinationNode CombinationGraphMapper::buildNode(const Combination& combination, const combination::graph::CombinationNode& node) {
     CombinationNode res;
-    res.id = node.id();
+    res.node_id = node.node_id();
     res.combination_id = combination.id;
     res.combination = std::make_shared<Combination>(combination);
     res.base_operate_id = node.base_operate().id();
@@ -50,12 +50,13 @@ CombinationNode CombinationGraphMapper::buildNode(const Combination& combination
     res.params = node.params();
     res.hold_time = node.hold_time();
     res.loop_cnt = node.loop_cnt();
+    res.auto_reset = node.auto_reset();
     return res;
 }
 
 CombinationEdge CombinationGraphMapper::buildEdge(const Combination& combination, const combination::graph::CombinationEdge& edge) {
     CombinationEdge res;
-    res.id = edge.id();
+    res.edge_id = edge.edge_id();
     res.combination_id = combination.id;
     res.combination = std::make_shared<Combination>(combination);
     res.from_combination_id = edge.from_node_id();

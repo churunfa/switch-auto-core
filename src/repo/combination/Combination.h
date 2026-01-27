@@ -21,10 +21,10 @@ struct Combination {
 
     static auto getDescription() {
         return make_table("combination",
-            make_column("id", &Combination::id, primary_key().autoincrement()),
+            make_column("id", &Combination::id, primary_key()),
             make_column("project_name", &Combination::project_name),
             make_column("combination_name", &Combination::combination_name),
-            make_column("desc", &Combination::combination_name),
+            make_column("desc", &Combination::desc),
             make_column("min_time", &Combination::min_time),
 
             sqlite_orm::unique(&Combination::project_name, &Combination::combination_name)
@@ -34,6 +34,7 @@ struct Combination {
 
 struct CombinationNode {
     int id;
+    int node_id;
     int combination_id;
     mutable std::shared_ptr<Combination> combination;
     int base_operate_id;
@@ -41,23 +42,27 @@ struct CombinationNode {
     std::string params;
     int hold_time;
     int loop_cnt;
+    bool auto_reset;
 
     static auto getDescription() {
         return make_table("combination_node",
-            make_column("id", &CombinationNode::id),
+            make_column("id", &CombinationNode::id, primary_key()),
+            make_column("node_id", &CombinationNode::node_id),
             make_column("combination_id", &CombinationNode::combination_id),
             make_column("base_operate_id", &CombinationNode::base_operate_id),
             make_column("params", &CombinationNode::params),
             make_column("hold_time", &CombinationNode::hold_time),
             make_column("loop_cnt", &CombinationNode::loop_cnt),
+            make_column("auto_reset", &CombinationNode::auto_reset, default_value(false)),
 
-            unique(&CombinationNode::combination_id, &CombinationNode::id)
+            unique(&CombinationNode::combination_id, &CombinationNode::node_id)
         );
     }
 };
 
 struct CombinationEdge {
     int id;
+    int edge_id;
     int combination_id;
     mutable std::shared_ptr<Combination> combination;
     int from_combination_id;
@@ -67,12 +72,13 @@ struct CombinationEdge {
 
     static auto getDescription() {
         return make_table("combination_edge",
-            make_column("id", &CombinationEdge::id),
+            make_column("id", &CombinationEdge::id, primary_key()),
+            make_column("edge_id", &CombinationEdge::edge_id),
             make_column("combination_id", &CombinationEdge::combination_id),
             make_column("from_combination_id", &CombinationEdge::from_combination_id),
             make_column("next_combination_id", &CombinationEdge::next_combination_id),
 
-            unique(&CombinationEdge::combination_id, &CombinationEdge::id)
+            unique(&CombinationEdge::combination_id, &CombinationEdge::edge_id)
         );
     }
 };
