@@ -63,7 +63,7 @@ struct BaseOperate {
 
             {0, "LEFT_STICK_CIRCLE", "左遥感旋转一圈", 0, "[]", "[]", default_min_time * 8, default_min_time},
             {0, "RESET_ALL", "重置所有按键", 0, "[]", "[]", default_min_time, default_min_time},
-            {0, "SLEEP", "等待时间", 0, "[]", "[]", 500, 500, false},
+            {0, "SLEEP", "等待时间", 0, R"(["time"])", "[500]", 500, 500, false},
             {0, "START_EMPTY", "开始", 0, "[]", "[]", 0, 0, false},
             {0, "END_EMPTY", "结束", 0, "[]", "[]", 0, 0, false},
         };

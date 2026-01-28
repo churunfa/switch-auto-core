@@ -262,7 +262,7 @@ CombinationNode runNode(const CombinationNode &node) {
     return node;
 }
 
-int get_node_finish_time(const CombinationNode &node) {
+long get_node_finish_time(const CombinationNode &node) {
     const auto high_res_now = std::chrono::high_resolution_clock::now();
     const auto high_res_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
         high_res_now.time_since_epoch()
@@ -305,7 +305,7 @@ void CombinationGraph::exec() const{
     std::vector<std::pair<int, std::future<CombinationNode>>> heap;
     heap.reserve(getCombinationNode().size());
 
-    auto task = std::bind(runNode, *start_node);
+    auto task = [capture0 = *start_node] { return runNode(capture0); };
     auto start_node_submit_task = graph_exec_pool.submit_task(task);
 
     heap.emplace_back(get_node_finish_time(*start_node), std::move(start_node_submit_task));
@@ -318,11 +318,11 @@ void CombinationGraph::exec() const{
 
         auto cur_node = cur_future.get();
 
-        for (const auto next_edges = outEdge(cur_node.node_id); auto next_edge : next_edges) {
+        for (const auto next_edges = outEdge(cur_node.node_id); const auto& next_edge : next_edges) {
             if (--in_cnt_map[next_edge.next_combination_id] == 0) {
                 auto next_node = getNodeById(next_edge.next_combination_id);
 
-                auto next_task = std::bind(runNode, next_node);
+                auto next_task = [next_node] { return runNode(next_node); };
                 auto next_node_submit_task = graph_exec_pool.submit_task(task);
 
                 heap.emplace_back(get_node_finish_time(next_node), std::move(next_node_submit_task));

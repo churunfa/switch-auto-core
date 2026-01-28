@@ -14,7 +14,10 @@ public:
             return false;
         }
         const auto param_vector = get_param_vector(params);
-        sleep(std::stoi(param_vector[0]));
+        if (param_vector.empty()) {
+            return true;
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(std::stoi(param_vector[0])));
         return true;
     }
 };
