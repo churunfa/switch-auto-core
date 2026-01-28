@@ -36,7 +36,7 @@ inline std::optional<ButtonType> getButtonType(const std::string& str) {
 
 class ButtonOperator : public OperatorStrategy {
 public:
-    bool execute(BaseOperate& base_operate, std::string& params, const bool reset) const override {
+    bool execute(const BaseOperate& base_operate, const std::string& params, const bool reset) const override {
         const auto button_type_opt = getButtonType(base_operate.ename);
         if (!button_type_opt.has_value()) {
             return false;

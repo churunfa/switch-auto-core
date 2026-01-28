@@ -21,7 +21,7 @@ class OperatorStrategy {
 public:
     virtual ~OperatorStrategy() = default;
     // 具体的算法接口
-    virtual bool execute(BaseOperate& base_operate, std::string& params, bool reset) const = 0;
+    virtual bool execute(const BaseOperate& base_operate, const std::string& params, bool reset) const = 0;
 };
 
 #endif //SWITCH_AUTO_CORE_OPERATOR_H

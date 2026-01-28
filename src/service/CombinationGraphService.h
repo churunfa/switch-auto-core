@@ -29,6 +29,12 @@ namespace service {
 
         grpc::Status DeleteGraph(grpc::ServerContext *context, const combination::graph::IntValue *request,
             base::SimpleResponse *response) override;
+
+        grpc::Status ExecGraph(grpc::ServerContext *context, const combination::graph::CombinationGraph *request,
+        base::SimpleResponse *response) override;
+
+        grpc::Status ExecGraphById(grpc::ServerContext *context, const combination::graph::IntValue *request,
+        base::SimpleResponse *response) override;
     };
 
 } // namespace service

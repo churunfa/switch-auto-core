@@ -26,8 +26,30 @@ void CombinationGraphMapper::FillNodeProto(const CombinationNode& src, combinati
     dest->set_node_id(src.node_id);
     BaseOperateMapper::FillBaseOperateProto(*src.base_operate, dest->mutable_base_operate());
     dest->set_params(src.params);
-    dest->set_hold_time(src.hold_time);
+    dest->set_exec_hold_time(src.exec_hold_time);
+    dest->set_reset_hold_time(src.reset_hold_time);
     dest->set_loop_cnt(src.loop_cnt);
+}
+
+CombinationGraph CombinationGraphMapper::buildGraph(const combination::graph::CombinationGraph *graph) {
+    const auto& combination = graph->combination();
+    const auto& combination_nodes = graph->combination_node();
+    const auto& combination_edges = graph->combination_edges();
+
+    Combination build_combination = buildCombination(combination);
+    auto build_nodes = std::vector<CombinationNode>();
+    build_nodes.reserve(combination_nodes.size());
+    for (int i = 0; i < combination_nodes.size(); i++) {
+        build_nodes.push_back(buildNode(build_combination, combination_nodes.Get(i)));
+    }
+
+    auto build_edges = std::vector<CombinationEdge>();
+    build_edges.reserve(combination_edges.size());
+    for (int i = 0; i < combination_edges.size(); i++) {
+        build_edges.push_back(buildEdge(build_combination, combination_edges.Get(i)));
+    }
+
+    return CombinationGraph(build_combination, build_nodes, build_edges);
 }
 
 Combination CombinationGraphMapper::buildCombination(const combination::graph::Combination& combination) {
@@ -42,13 +64,15 @@ Combination CombinationGraphMapper::buildCombination(const combination::graph::C
 
 CombinationNode CombinationGraphMapper::buildNode(const Combination& combination, const combination::graph::CombinationNode& node) {
     CombinationNode res;
+    res.id = 0;
     res.node_id = node.node_id();
     res.combination_id = combination.id;
     res.combination = std::make_shared<Combination>(combination);
     res.base_operate_id = node.base_operate().id();
     res.base_operate = std::make_shared<BaseOperate>(BaseOperateMapper::buildBaseOperate(node.base_operate()));
     res.params = node.params();
-    res.hold_time = node.hold_time();
+    res.exec_hold_time = node.exec_hold_time();
+    res.reset_hold_time = node.reset_hold_time();
     res.loop_cnt = node.loop_cnt();
     res.auto_reset = node.auto_reset();
     return res;

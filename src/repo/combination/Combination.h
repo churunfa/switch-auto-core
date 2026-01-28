@@ -40,7 +40,8 @@ struct CombinationNode {
     int base_operate_id;
     mutable std::shared_ptr<BaseOperate> base_operate;
     std::string params;
-    int hold_time;
+    int exec_hold_time;
+    int reset_hold_time;
     int loop_cnt;
     bool auto_reset;
 
@@ -51,7 +52,8 @@ struct CombinationNode {
             make_column("combination_id", &CombinationNode::combination_id),
             make_column("base_operate_id", &CombinationNode::base_operate_id),
             make_column("params", &CombinationNode::params),
-            make_column("hold_time", &CombinationNode::hold_time),
+            make_column("exec_hold_time", &CombinationNode::exec_hold_time),
+            make_column("reset_hold_time", &CombinationNode::reset_hold_time),
             make_column("loop_cnt", &CombinationNode::loop_cnt),
             make_column("auto_reset", &CombinationNode::auto_reset, default_value(false)),
 

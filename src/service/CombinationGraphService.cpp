@@ -76,24 +76,7 @@ namespace service {
 
     grpc::Status CombinationGraphServiceImpl::UpdateGraph(grpc::ServerContext *context, const combination::graph::CombinationGraph *request,
                                                                    base::SimpleResponse *response) {
-        const auto& combination = request->combination();
-        const auto& combination_nodes = request->combination_node();
-        const auto& combination_edges = request->combination_edges();
-
-        Combination build_combination = CombinationGraphMapper::buildCombination(combination);
-        auto build_nodes = std::vector<CombinationNode>();
-        build_nodes.reserve(combination_nodes.size());
-        for (int i = 0; i < combination_nodes.size(); i++) {
-            build_nodes.push_back(CombinationGraphMapper::buildNode(build_combination, combination_nodes.Get(i)));
-        }
-
-        auto build_edges = std::vector<CombinationEdge>();
-        build_edges.reserve(combination_edges.size());
-        for (int i = 0; i < combination_edges.size(); i++) {
-            build_edges.push_back(CombinationGraphMapper::buildEdge(build_combination, combination_edges.Get(i)));
-        }
-
-        const auto build_graph = CombinationGraph(build_combination, build_nodes, build_edges);
+        const auto build_graph = CombinationGraphMapper::buildGraph(request);
         CombinationRepo::updateGraph(build_graph);
         response->set_success(true);
         return grpc::Status::OK;
@@ -103,6 +86,20 @@ namespace service {
                                                                    base::SimpleResponse *response) {
         CombinationRepo::deleteGraph(request -> value());
         response->set_success(true);
+        return grpc::Status::OK;
+    }
+
+    grpc::Status CombinationGraphServiceImpl::ExecGraph(grpc::ServerContext *context, const combination::graph::CombinationGraph *request,
+       base::SimpleResponse *response) {
+        const auto build_graph = CombinationGraphMapper::buildGraph(request);
+        build_graph.exec();
+        return grpc::Status::OK;
+    }
+
+    grpc::Status CombinationGraphServiceImpl::ExecGraphById(grpc::ServerContext *context, const combination::graph::IntValue *request,
+        base::SimpleResponse *response) {
+        const auto combination_graph = CombinationRepo::getGraphById(request -> value());
+        combination_graph->exec();
         return grpc::Status::OK;
     }
 }

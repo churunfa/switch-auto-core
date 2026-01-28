@@ -15,6 +15,13 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(sqlite_orm)
 
+FetchContent_Declare(
+        bs_thread_pool
+        GIT_REPOSITORY https://github.com/bshoshany/thread-pool.git
+        GIT_TAG v5.1.0
+)
+FetchContent_MakeAvailable(bs_thread_pool)
+
 # ---------------------------------------------------------
 # 1. 查找依赖 (Config 模式)
 # ---------------------------------------------------------
@@ -99,6 +106,7 @@ set(ALL_SOURCES
         src/service/mapper/CombinationGraphMapper.cpp
         src/repo/base/IdGenerate.h
         src/repo/base/IdGenerate.cpp
+        src/exec/base/SleepOperate.h
 )
 add_executable(switch_auto_core ${ALL_SOURCES})
 
@@ -110,6 +118,7 @@ target_include_directories(switch_auto_core PRIVATE src)
 target_include_directories(switch_auto_core PRIVATE lib)
 target_include_directories(switch_auto_core PRIVATE ${GEN_CPP_PATH})
 target_include_directories(switch_auto_core PRIVATE ${GEN_GRPC_PATH})
+target_include_directories(switch_auto_core PRIVATE ${bs_thread_pool_SOURCE_DIR}/include)
 
 target_link_libraries(switch_auto_core PRIVATE
         protobuf::libprotobuf
@@ -117,6 +126,7 @@ target_link_libraries(switch_auto_core PRIVATE
         gRPC::grpc++
         sqlite3
         sqlite_orm::sqlite_orm
+        Threads::Threads
 )
 
 set_directory_properties(PROPERTIES ADDITIONAL_CLEAN_FILES "${GEN_BASE_PATH}")

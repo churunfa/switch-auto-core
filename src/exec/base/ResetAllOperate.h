@@ -9,7 +9,7 @@
 
 class ResetAllOperator : public OperatorStrategy {
 public:
-    bool execute(BaseOperate& base_operate, std::string& params, const bool reset) const override {
+    bool execute(const BaseOperate& base_operate, const std::string& params, const bool reset) const override {
         if (base_operate.ename != "RESET_ALL") {
             return false;
         }

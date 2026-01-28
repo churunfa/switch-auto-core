@@ -4,8 +4,7 @@
 
 #include "CombinationGraph.h"
 
-#include <unistd.h>
-
+#include "exec/base/BaseOperationProcess.h"
 #include "repo/DatabaseManager.h"
 
 void deleteGraphCore(const int combination_id) {
@@ -44,10 +43,10 @@ void CombinationRepo::deleteGraph(const int combination_id) {
 }
 
 Combination copyCombination(const std::optional<const Combination>& combination) {
-    return Combination(*combination);
+    return Combination{combination->id, combination->project_name, combination->combination_name, combination->desc, combination->min_time};
 }
 
-std::vector<CombinationNode> copyCombinationNodes(const std::vector<const CombinationNode*> combination_nodes) {
+std::vector<CombinationNode> copyCombinationNodes(const std::vector<const CombinationNode*>& combination_nodes) {
     std::vector<CombinationNode> combination_nodes_copy;
     combination_nodes_copy.reserve(combination_nodes.size());
 for (const auto combination_node : combination_nodes) {
@@ -56,7 +55,7 @@ for (const auto combination_node : combination_nodes) {
     return combination_nodes_copy;
 }
 
-std::vector<CombinationEdge> copyCombinationEdges(const std::vector<const CombinationEdge*> combination_edges) {
+std::vector<CombinationEdge> copyCombinationEdges(const std::vector<const CombinationEdge*>& combination_edges) {
     std::vector<CombinationEdge> combination_edges_copy;
     combination_edges_copy.reserve(combination_edges.size());
     for (const auto combination_edge : combination_edges) {
@@ -153,11 +152,14 @@ std::vector<CombinationEdge> allCombinationEdge(const int combination_id) {
     return edges;
 }
 
-std::optional<CombinationGraph> CombinationRepo::getGraphById(const int id) {
+    std::optional<CombinationGraph> CombinationRepo::getGraphById(const int id) {
     const auto combination = db.get_pointer<Combination>(where(c(&Combination::id) == id));
+    if (!combination) {
+        return std::nullopt;
+    }
     const auto combination_nodes = allCombinationNode(id);
     const auto combination_edges = allCombinationEdge(id);
-    return CombinationGraph(*combination, combination_nodes, combination_edges);
+    return std::make_optional<CombinationGraph>(*combination, combination_nodes, combination_edges);
 }
 
 std::optional<CombinationGraph> CombinationRepo::getGraphByName(const std::string &project_name, const std::string &combination_name) {
@@ -236,4 +238,97 @@ const CombinationEdge& CombinationGraph::getEdgeById(const int id) const {
 
 const std::vector<CombinationEdge>& CombinationGraph::outEdge(const int node_id) const {
     return out_edge.at(node_id);
+}
+
+CombinationNode runNode(const CombinationNode &node) {
+    for (int i = 0; i < node.loop_cnt; i++) {
+        BaseOperationProcess::getInstance().run(*node.base_operate, node.params, false);
+        int exec_sleep_time = node.base_operate->min_exec_time;
+        if (node.exec_hold_time != 0) {
+            exec_sleep_time = node.exec_hold_time;
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(exec_sleep_time));
+
+        if (node.auto_reset) {
+            BaseOperationProcess::getInstance().run(*node.base_operate, node.params, true);
+
+            int reset_sleep_time = node.base_operate->min_reset_time;
+            if (node.reset_hold_time != 0) {
+                reset_sleep_time = node.reset_hold_time;
+            }
+            std::this_thread::sleep_for(std::chrono::milliseconds(reset_sleep_time));
+        }
+    }
+    return node;
+}
+
+int get_node_finish_time(const CombinationNode &node) {
+    const auto high_res_now = std::chrono::high_resolution_clock::now();
+    const auto high_res_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+        high_res_now.time_since_epoch()
+    );
+
+    int exec_time = 0;
+    if (node.exec_hold_time != 0) {
+        exec_time += node.exec_hold_time;
+    } else {
+        exec_time += node.base_operate->min_exec_time;
+    }
+    if (node.auto_reset) {
+        if (node.reset_hold_time != 0) {
+            exec_time += node.reset_hold_time;
+        } else {
+            exec_time += node.base_operate->min_reset_time;
+        }
+    }
+    exec_time *= node.loop_cnt;
+
+    return high_res_ms.count() + exec_time;
+}
+
+// 比较器：最小堆
+auto heap_compare = [](const auto& a, const auto& b) {
+    return a.first > b.first;
+};
+
+void CombinationGraph::exec() const{
+    std::lock_guard lock(execMtx);
+    if (!start_node) {
+        throw std::runtime_error("拓扑图结构异常，不存在起始节点");
+    }
+
+    std::map<int,int> in_cnt_map;
+    for (auto edge : getCombinationEdge()) {
+        in_cnt_map[edge->next_combination_id]++;
+    }
+
+    std::vector<std::pair<int, std::future<CombinationNode>>> heap;
+    heap.reserve(getCombinationNode().size());
+
+    auto task = std::bind(runNode, *start_node);
+    auto start_node_submit_task = graph_exec_pool.submit_task(task);
+
+    heap.emplace_back(get_node_finish_time(*start_node), std::move(start_node_submit_task));
+    std::ranges::push_heap(heap, heap_compare);
+
+    while (!heap.empty()) {
+        std::ranges::pop_heap(heap, heap_compare);
+        auto cur_future = std::move(heap.back().second);
+        heap.pop_back();
+
+        auto cur_node = cur_future.get();
+
+        for (const auto next_edges = outEdge(cur_node.node_id); auto next_edge : next_edges) {
+            if (--in_cnt_map[next_edge.next_combination_id] == 0) {
+                auto next_node = getNodeById(next_edge.next_combination_id);
+
+                auto next_task = std::bind(runNode, next_node);
+                auto next_node_submit_task = graph_exec_pool.submit_task(task);
+
+                heap.emplace_back(get_node_finish_time(next_node), std::move(next_node_submit_task));
+                std::ranges::push_heap(heap, heap_compare);
+            }
+        }
+    }
+
 }

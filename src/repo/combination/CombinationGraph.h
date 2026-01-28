@@ -5,10 +5,11 @@
 #ifndef SWITCH_AUTO_CORE_COMBINATIONGRAPH_H
 #define SWITCH_AUTO_CORE_COMBINATIONGRAPH_H
 #include "Combination.h"
-
+#include "BS_thread_pool.hpp"
 
 struct CombinationNode;
 struct CombinationEdge;
+
 
 class CombinationGraph {
     std::optional<Combination> combination = std::nullopt;
@@ -20,6 +21,7 @@ class CombinationGraph {
 
     std::map<int, std::vector<CombinationEdge>> out_edge;
 
+    static inline std::recursive_mutex execMtx;
 public:
     CombinationGraph(Combination& combination, const std::vector<CombinationNode>& nodes, const std::vector<CombinationEdge>& edges);
     const std::optional<Combination>& getCombination() const;
@@ -30,7 +32,7 @@ public:
     const CombinationNode& getNodeById(int id) const;
     const CombinationEdge& getEdgeById(int id) const;
     const std::vector<CombinationEdge>& outEdge(int node_id) const;
-
+    void exec() const;
 };
 
 class CombinationRepo {
@@ -43,5 +45,12 @@ public:
     static std::optional<CombinationGraph> getGraphById(int id);
     static std::optional<CombinationGraph> getGraphByName(const std::string &project_name, const std::string &combination_name);
 };
+
+inline BS::thread_pool<>& get_graph_exec_pool() {
+    static BS::thread_pool graph_exec_pool(100);
+    return graph_exec_pool;
+}
+
+#define graph_exec_pool get_graph_exec_pool()
 
 #endif //SWITCH_AUTO_CORE_COMBINATIONGRAPH_H

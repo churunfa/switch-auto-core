@@ -23,6 +23,7 @@ message BaseOperate {
     string init_params = 6;
     int32 min_exec_time = 7;
     int32 min_reset_time = 8;
+    bool need_reset = 9;
 }
 
 message GetAllBaseOperatesResponse {

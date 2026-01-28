@@ -5,12 +5,12 @@
 #ifndef SWITCH_AUTO_CORE_OPERATIONCONTEXT_H
 #define SWITCH_AUTO_CORE_OPERATIONCONTEXT_H
 
-#include <iostream>
 #include "ButtonOperator.h"
 #include "EmptyOperate.h"
 #include "ImuOperator.h"
 #include "OperatorStrategy.h"
 #include "ResetAllOperate.h"
+#include "SleepOperate.h"
 #include "StickOperate.h"
 
 class OperatorStrategy;
@@ -23,9 +23,10 @@ class BaseOperationProcess {
         strategies.push_back(std::make_unique<ImuOperator>());
         strategies.push_back(std::make_unique<ResetAllOperator>());
         strategies.push_back(std::make_unique<EmptyOperator>());
+        strategies.push_back(std::make_unique<SleepOperator>());
     }
 public:
-    void run(BaseOperate& base_operate, std::string& params, const bool reset) const {
+    void run(const BaseOperate& base_operate, const std::string& params, const bool reset) const {
         for (const auto& strategy : strategies) {
             if (strategy -> execute(base_operate, params, reset)) {
                 return;

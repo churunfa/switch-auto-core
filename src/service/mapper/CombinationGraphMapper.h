@@ -22,6 +22,7 @@ public:
     static void FillEdgeProto(const CombinationEdge& src, combination::graph::CombinationEdge* dest);
     static void FillCombinationProto(const Combination& src, combination::graph::Combination* dest);
 
+    static CombinationGraph buildGraph(const combination::graph::CombinationGraph* graph);
     static Combination buildCombination(const combination::graph::Combination& combination);
     static CombinationNode buildNode(const Combination& combination, const combination::graph::CombinationNode& node);
     static CombinationEdge buildEdge(const Combination& combination, const combination::graph::CombinationEdge& edge);
