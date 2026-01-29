@@ -4,8 +4,10 @@
 
 #ifndef SWITCH_AUTO_CORE_COMBINATIONGRAPH_H
 #define SWITCH_AUTO_CORE_COMBINATIONGRAPH_H
+#include <boost/asio/awaitable.hpp>
 #include "Combination.h"
-#include "BS_thread_pool.hpp"
+
+namespace asio = boost::asio;
 
 struct CombinationNode;
 struct CombinationEdge;
@@ -21,7 +23,7 @@ class CombinationGraph {
 
     std::map<int, std::vector<CombinationEdge>> out_edge;
 
-    static inline std::recursive_mutex execMtx;
+    asio::awaitable<void> execCore() const;
 public:
     CombinationGraph(Combination& combination, const std::vector<CombinationNode>& nodes, const std::vector<CombinationEdge>& edges);
     const std::optional<Combination>& getCombination() const;
@@ -46,11 +48,15 @@ public:
     static std::optional<CombinationGraph> getGraphByName(const std::string &project_name, const std::string &combination_name);
 };
 
-inline BS::thread_pool<>& get_graph_exec_pool() {
-    static BS::thread_pool graph_exec_pool(100);
-    return graph_exec_pool;
-}
+class TopoSession : std::enable_shared_from_this<TopoSession> {
+    asio::io_context& ctx;
+    const CombinationGraph* graph;
+    std::unordered_map<int, int> in_degrees;
 
-#define graph_exec_pool get_graph_exec_pool()
+    asio::awaitable<void> execute_node(const CombinationNode& node);
+public:
+    TopoSession(asio::io_context& c, const CombinationGraph* g);
+    void run();
+};
 
 #endif //SWITCH_AUTO_CORE_COMBINATIONGRAPH_H

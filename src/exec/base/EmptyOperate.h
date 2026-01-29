@@ -9,8 +9,8 @@
 
 class EmptyOperator : public OperatorStrategy {
 public:
-    bool execute(const BaseOperate& base_operate, const std::string& params, const bool reset) const override {
-        if (base_operate.ename != "START_EMPTY" && base_operate.ename != "END_EMPTY") {
+    [[nodiscard]] bool execute(const BaseOperate& base_operate, const std::string& params, const bool reset) const override {
+        if (base_operate.ename != "START_EMPTY" && base_operate.ename != "END_EMPTY" && base_operate.ename != "SLEEP") {
             return false;
         }
         return true;

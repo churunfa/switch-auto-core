@@ -10,7 +10,6 @@
 #include "ImuOperator.h"
 #include "OperatorStrategy.h"
 #include "ResetAllOperate.h"
-#include "SleepOperate.h"
 #include "StickOperate.h"
 
 class OperatorStrategy;
@@ -23,7 +22,6 @@ class BaseOperationProcess {
         strategies.push_back(std::make_unique<ImuOperator>());
         strategies.push_back(std::make_unique<ResetAllOperator>());
         strategies.push_back(std::make_unique<EmptyOperator>());
-        strategies.push_back(std::make_unique<SleepOperator>());
     }
 public:
     void run(const BaseOperate& base_operate, const std::string& params, const bool reset) const {
