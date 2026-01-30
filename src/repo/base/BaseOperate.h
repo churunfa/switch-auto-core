@@ -35,7 +35,7 @@ struct BaseOperate {
     }
 
     static const std::vector<BaseOperate>& getStaticDefaults() {
-        static int default_min_time = 17;
+        static int default_min_time = 15;
         static const std::vector<BaseOperate> defaults = {
             {0, "BUTTON_Y", "Y", 0, "[]", "[]", default_min_time, default_min_time},
             {0, "BUTTON_X", "X", 0, "[]", "[]", default_min_time, default_min_time},
@@ -63,7 +63,7 @@ struct BaseOperate {
 
             {0, "LEFT_STICK_CIRCLE", "左遥感旋转一圈", 0, "[]", "[]", default_min_time * 8, default_min_time},
             {0, "RESET_ALL", "重置所有按键", 0, "[]", "[]", default_min_time, default_min_time, false},
-            {0, "SLEEP", "等待时间", 0, "[]", "[]", 500, 0, false},
+            {0, "SLEEP", "等待时间", 0, "[]", "[]", 200, 0, false},
             {0, "START_EMPTY", "开始", 0, "[]", "[]", 0, 0, false},
             {0, "END_EMPTY", "结束", 0, "[]", "[]", 0, 0, false},
         };
