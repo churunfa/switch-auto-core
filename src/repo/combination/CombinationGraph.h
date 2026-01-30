@@ -22,10 +22,9 @@ class CombinationGraph {
     std::map<int, CombinationEdge> edge_map;
 
     std::map<int, std::vector<CombinationEdge>> out_edge;
-
-    asio::awaitable<void> execCore() const;
 public:
     CombinationGraph(Combination& combination, const std::vector<CombinationNode>& nodes, const std::vector<CombinationEdge>& edges);
+    CombinationGraph(const CombinationGraph& combination);
     const std::optional<Combination>& getCombination() const;
     const std::optional<CombinationNode>& getStartNode() const;
     const std::optional<CombinationNode>& getEndNode() const;
@@ -34,7 +33,6 @@ public:
     const CombinationNode& getNodeById(int id) const;
     const CombinationEdge& getEdgeById(int id) const;
     const std::vector<CombinationEdge>& outEdge(int node_id) const;
-    void exec() const;
 };
 
 class CombinationRepo {
@@ -48,15 +46,18 @@ public:
     static std::optional<CombinationGraph> getGraphByName(const std::string &project_name, const std::string &combination_name);
 };
 
-class TopoSession : std::enable_shared_from_this<TopoSession> {
+class TopoSession : public std::enable_shared_from_this<TopoSession> {
     asio::io_context& ctx;
-    const CombinationGraph* graph;
+    const CombinationGraph& graph;
     std::unordered_map<int, int> in_degrees;
 
-    asio::awaitable<void> execute_node(const CombinationNode& node);
-public:
-    TopoSession(asio::io_context& c, const CombinationGraph* g);
+    asio::awaitable<void> execute_node(int node_id);
     void run();
+    static asio::awaitable<void> execCore(const CombinationGraph &graph);
+    static asio::awaitable<void> runNode(const CombinationNode &node);
+public:
+    TopoSession(asio::io_context& c, const CombinationGraph& g);
+    static void exec(const CombinationGraph &graph);
 };
 
 #endif //SWITCH_AUTO_CORE_COMBINATIONGRAPH_H

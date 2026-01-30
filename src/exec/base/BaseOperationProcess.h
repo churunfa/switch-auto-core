@@ -30,7 +30,7 @@ public:
                 return;
             }
         }
-        throw std::out_of_range("不支持的操作类型" + base_operate.ename);
+        throw std::out_of_range("不支持的操作类型：" + base_operate.ename);
     }
     static BaseOperationProcess& getInstance() {
         static BaseOperationProcess instance;

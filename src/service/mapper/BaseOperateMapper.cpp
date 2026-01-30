@@ -16,6 +16,7 @@ void BaseOperateMapper::FillBaseOperateProto(const BaseOperate& src, base::opera
     dest->set_init_params(src.init_params);
     dest->set_min_exec_time(src.min_exec_time);
     dest->set_min_reset_time(src.min_reset_time);
+    dest->set_need_reset(src.need_reset);
 }
 
 BaseOperate BaseOperateMapper::buildBaseOperate(const base::operate::BaseOperate &proto) {

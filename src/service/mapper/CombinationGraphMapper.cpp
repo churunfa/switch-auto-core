@@ -18,17 +18,21 @@ void CombinationGraphMapper::FillCombinationProto(const Combination& src, combin
 }
 void CombinationGraphMapper::FillEdgeProto(const CombinationEdge& src, combination::graph::CombinationEdge* dest) {
     dest->set_edge_id(src.edge_id);
+    dest->set_edge_name(src.edge_name);
     dest->set_from_node_id(src.from_combination_id);
     dest->set_next_node_id(src.next_combination_id);
 }
 
 void CombinationGraphMapper::FillNodeProto(const CombinationNode& src, combination::graph::CombinationNode* dest) {
     dest->set_node_id(src.node_id);
+    dest->set_node_name(src.node_name);
     BaseOperateMapper::FillBaseOperateProto(*src.base_operate, dest->mutable_base_operate());
     dest->set_params(src.params);
     dest->set_exec_hold_time(src.exec_hold_time);
     dest->set_reset_hold_time(src.reset_hold_time);
     dest->set_loop_cnt(src.loop_cnt);
+    dest->set_exec(src.exec);
+    dest->set_reset(src.reset);
 }
 
 CombinationGraph CombinationGraphMapper::buildGraph(const combination::graph::CombinationGraph *graph) {
@@ -66,6 +70,7 @@ CombinationNode CombinationGraphMapper::buildNode(const Combination& combination
     CombinationNode res;
     res.id = 0;
     res.node_id = node.node_id();
+    res.node_name = node.node_name();
     res.combination_id = combination.id;
     res.combination = std::make_shared<Combination>(combination);
     res.base_operate_id = node.base_operate().id();
@@ -74,13 +79,16 @@ CombinationNode CombinationGraphMapper::buildNode(const Combination& combination
     res.exec_hold_time = node.exec_hold_time();
     res.reset_hold_time = node.reset_hold_time();
     res.loop_cnt = node.loop_cnt();
-    res.auto_reset = node.auto_reset();
+    res.exec = node.exec();
+    res.reset = node.reset();
     return res;
 }
 
 CombinationEdge CombinationGraphMapper::buildEdge(const Combination& combination, const combination::graph::CombinationEdge& edge) {
     CombinationEdge res;
+    res.id = 0;
     res.edge_id = edge.edge_id();
+    res.edge_name = edge.edge_name();
     res.combination_id = combination.id;
     res.combination = std::make_shared<Combination>(combination);
     res.from_combination_id = edge.from_node_id();

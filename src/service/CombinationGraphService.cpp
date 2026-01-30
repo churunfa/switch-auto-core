@@ -92,14 +92,16 @@ namespace service {
     grpc::Status CombinationGraphServiceImpl::ExecGraph(grpc::ServerContext *context, const combination::graph::CombinationGraph *request,
        base::SimpleResponse *response) {
         const auto build_graph = CombinationGraphMapper::buildGraph(request);
-        build_graph.exec();
+        TopoSession::exec(build_graph);
+        response->set_success(true);
         return grpc::Status::OK;
     }
 
     grpc::Status CombinationGraphServiceImpl::ExecGraphById(grpc::ServerContext *context, const combination::graph::IntValue *request,
         base::SimpleResponse *response) {
         const auto combination_graph = CombinationRepo::getGraphById(request -> value());
-        combination_graph->exec();
+        TopoSession::exec(*combination_graph);
+        response->set_success(true);
         return grpc::Status::OK;
     }
 }
