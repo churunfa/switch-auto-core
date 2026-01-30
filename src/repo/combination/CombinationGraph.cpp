@@ -6,6 +6,7 @@
 #include "exec/base/BaseOperationProcess.h"
 #include "exec/coroutine/CoroutineUtils.h"
 #include "repo/DatabaseManager.h"
+#include "service/mapper/CombinationGraphMapper.h"
 
 namespace asio = boost::asio;
 
@@ -44,15 +45,11 @@ void CombinationRepo::deleteGraph(const int combination_id) {
     }
 }
 
-Combination copyCombination(const std::optional<const Combination>& combination) {
-    return Combination{combination->id, combination->project_name, combination->combination_name, combination->desc, combination->min_time};
-}
-
 std::vector<CombinationNode> copyCombinationNodes(const std::vector<const CombinationNode*>& combination_nodes) {
     std::vector<CombinationNode> combination_nodes_copy;
     combination_nodes_copy.reserve(combination_nodes.size());
 for (const auto combination_node : combination_nodes) {
-        combination_nodes_copy.emplace_back(*combination_node);
+        combination_nodes_copy.emplace_back(CombinationNode(*combination_node));
     }
     return combination_nodes_copy;
 }
@@ -61,7 +58,7 @@ std::vector<CombinationEdge> copyCombinationEdges(const std::vector<const Combin
     std::vector<CombinationEdge> combination_edges_copy;
     combination_edges_copy.reserve(combination_edges.size());
     for (const auto combination_edge : combination_edges) {
-        combination_edges_copy.emplace_back(*combination_edge);
+        combination_edges_copy.emplace_back(CombinationEdge(*combination_edge));
     }
     return combination_edges_copy;
 }
@@ -72,7 +69,7 @@ void updateOrSaveGraphCore(const CombinationGraph &graph, const bool insert) {
     const std::vector<const CombinationNode*> combination_nodes = graph.getCombinationNode();
     const std::vector<const CombinationEdge*> combination_edges = graph.getCombinationEdge();
 
-    auto copy_combination = copyCombination(combination);
+    auto copy_combination = Combination(*combination);
     auto copy_nodes = copyCombinationNodes(combination_nodes);
     auto copy_edges = copyCombinationEdges(combination_edges);
 
@@ -174,6 +171,16 @@ std::optional<CombinationGraph> CombinationRepo::getGraphByName(const std::strin
     return getGraphById(combination -> id);
 }
 
+CombinationGraph:: // 深拷贝构造函数
+    CombinationGraph(const CombinationGraph& other)
+        : combination(other.combination),
+          start_node(other.start_node),
+          end_node(other.end_node),
+          node_map(other.node_map),
+          edge_map(other.edge_map),
+          out_edge(other.out_edge) {
+}
+
 
 CombinationGraph::CombinationGraph(Combination& combination, const std::vector<CombinationNode>& nodes, const std::vector<CombinationEdge>& edges) {
     this->combination = combination;
@@ -242,43 +249,44 @@ const std::vector<CombinationEdge>& CombinationGraph::outEdge(const int node_id)
     return out_edge.at(node_id);
 }
 
-asio::awaitable<void> runNode(const CombinationNode &node) {
+asio::awaitable<void> TopoSession::runNode(const CombinationNode &node) {
     for (int i = 0; i < node.loop_cnt; i++) {
-        BaseOperationProcess::getInstance().run(*node.base_operate, node.params, false);
-        int exec_sleep_time = node.base_operate->min_exec_time;
-        if (node.exec_hold_time != 0) {
-            exec_sleep_time = node.exec_hold_time;
+        if (node.exec) {
+            BaseOperationProcess::getInstance().run(*node.base_operate, node.params, false);
+            if (node.exec_hold_time != 0) {
+                int exec_sleep_time = node.exec_hold_time;
+                co_await coroutine::async_sleep_task(exec_sleep_time);
+            }
         }
-        co_await coroutine::async_sleep_task(exec_sleep_time);
-        if (node.auto_reset) {
+        if (node.reset) {
             BaseOperationProcess::getInstance().run(*node.base_operate, node.params, true);
 
-            int reset_sleep_time = node.base_operate->min_reset_time;
             if (node.reset_hold_time != 0) {
-                reset_sleep_time = node.reset_hold_time;
+                const int reset_sleep_time = node.reset_hold_time;
+                co_await coroutine::async_sleep_task(reset_sleep_time);
             }
-            co_await coroutine::async_sleep_task(reset_sleep_time);
         }
     }
 }
 
-asio::awaitable<void> CombinationGraph::execCore() const {
+asio::awaitable<void> TopoSession::execCore(const CombinationGraph &graph) {
     std::unordered_map<int,std::atomic<int>> in_cnt_map;
-    for (const auto edge : getCombinationEdge()) {
+    for (const auto edge : graph.getCombinationEdge()) {
         ++in_cnt_map[edge->next_combination_id];
     }
     const auto ctx = co_await asio::this_coro::executor;
-    asio::co_spawn(ctx, runNode(*start_node), asio::detached);
+    asio::co_spawn(ctx, runNode(*graph.getStartNode()), asio::detached);
 }
 
-void CombinationGraph::exec() const{
-    if (!start_node) {
+void TopoSession::exec(const CombinationGraph &g) {
+    if (!g.getStartNode()) {
         throw std::runtime_error("拓扑图结构异常，不存在起始节点");
     }
 
     try {
+        auto graph = CombinationGraph(g);
         asio::io_context ctx;
-        const auto session = std::make_shared<TopoSession>(ctx, this);
+        const auto session = std::make_shared<TopoSession>(ctx, graph);
         session->run();
         ctx.run();
     } catch (std::exception& e) {
@@ -286,26 +294,38 @@ void CombinationGraph::exec() const{
     }
 }
 
-asio::awaitable<void> TopoSession::execute_node(const CombinationNode& node) {
+asio::awaitable<void> TopoSession::execute_node(int node_id) {
+
     // 捕获 shared_ptr 保证协程运行期间 session 不被销毁
     const auto self = shared_from_this();
 
-    if (node.base_operate->ename == "END_EMPTY") co_return;
+    auto node = graph.getNodeById(node_id);
 
-    co_await runNode(node);
+    std::cout << "[DEBUG] Start execute_node: " << node.node_id
+            << ", ename: " << node.base_operate->ename << ",reset:" << node.reset << std::endl;
 
-    for (const auto next_edges = graph->outEdge(node.node_id); const auto next_edge : next_edges) {
-        if (const auto next_node = graph->getNodeById(next_edge.next_combination_id); --in_degrees[next_node.node_id] == 0) {
-            asio::co_spawn(ctx, self->execute_node(next_node), asio::detached);
+    if (node.base_operate->ename == "END_EMPTY") {
+        co_return;
+    }
+
+    try {
+        co_await runNode(node);
+    } catch (const std::exception& e) {
+        std::cerr << "Exception in runNode: " << e.what() << std::endl;
+    }
+
+    for (const auto next_edges = graph.outEdge(node.node_id); const auto next_edge : next_edges) {
+        if (const auto next_node = graph.getNodeById(next_edge.next_combination_id); --in_degrees[next_node.node_id] == 0) {
+            asio::co_spawn(ctx, self->execute_node(next_node.node_id), asio::detached);
         }
     }
 }
 
-TopoSession::TopoSession(asio::io_context& c, const CombinationGraph* g) : ctx(c), graph(g) {}
+TopoSession::TopoSession(asio::io_context& c, const CombinationGraph& g) : ctx(c), graph(g) {}
 
 void TopoSession::run() {
-    for (const auto edge : graph->getCombinationEdge()) {
+    for (const auto edge : graph.getCombinationEdge()) {
         ++in_degrees[edge->next_combination_id];
     }
-    asio::co_spawn(ctx, execute_node(*graph->getStartNode()), asio::detached);
+    asio::co_spawn(ctx, execute_node(graph.getStartNode()->node_id), asio::detached);
 }
