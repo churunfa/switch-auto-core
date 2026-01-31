@@ -286,18 +286,31 @@ void TopoSession::check_async_running() {
     }
 }
 
-void TopoSession::exec(const CombinationGraph &graph) {
-    check_async_running();
-
+void TopoSession::exec(const CombinationGraph &graph, const bool async) {
     if (!graph.getStartNode()) {
         throw std::runtime_error("拓扑图结构异常，不存在起始节点");
     }
+    if (!async) {
+        check_async_running();
+    } else {
+        std::lock_guard lock(async_running_mtx);
+        async_running = true;
+        ++async_exec_cnt;
+    }
+
 
     try {
         asio::io_context ctx;
         const auto session = std::make_shared<TopoSession>(ctx, graph);
         session->run();
         ctx.run();
+
+        while (async_running) {
+            ++async_exec_cnt;
+            ctx.restart();
+            session->run();
+            ctx.run();
+        }
     } catch (std::exception& e) {
         std::cerr << "拓扑图计算异常: " << e.what() << std::endl;
     }
@@ -312,14 +325,13 @@ void TopoSession::asyncExec(const int graph_id) {
     }
 
     std::lock_guard lock(async_running_mtx);
-    async_running = true;
 
     // 获取当前时间戳
     const auto now = std::chrono::system_clock::now();
     async_start_time = std::chrono::time_point_cast<std::chrono::milliseconds>(now).time_since_epoch().count();
-
+    running_graph_id = graph_id;
     async_exec_cnt = 0;
-    worker = std::thread(&TopoSession::exec, *combination_graph);
+    worker = std::thread(&TopoSession::exec, *combination_graph, true);
 }
 
 void TopoSession::stopAsyncExec() {
@@ -335,33 +347,13 @@ asio::awaitable<void> TopoSession::execute_node(int node_id) {
 
     auto node = graph.getNodeById(node_id);
 
-    std::cout << "[DEBUG] Start execute_node: " << node.node_id
-            << ", ename: " << node.base_operate->ename << ",reset:" << node.reset << std::endl;
-
     try {
         co_await runNode(node);
     } catch (const std::exception& e) {
         std::cerr << "Exception in runNode: " << e.what() << std::endl;
     }
 
-    const auto next_edges = graph.outEdge(node.node_id);
-    if (next_edges.empty()) {
-        // 执行完了
-        std::lock_guard lock(async_running_mtx);
-
-        if (async_running) {
-            // 需要异步执行，从头执行
-            in_degrees.clear();
-            for (const auto edge : graph.getCombinationEdge()) {
-                ++in_degrees[edge->next_combination_id];
-            }
-            asio::co_spawn(ctx, self->execute_node(graph.getStartNode() -> node_id), asio::detached);
-            ++async_exec_cnt;
-        }
-        co_return;
-    }
-
-    for (const auto next_edge : next_edges) {
+    for (const auto next_edges = graph.outEdge(node.node_id); const auto next_edge : next_edges) {
         if (const auto next_node = graph.getNodeById(next_edge.next_combination_id); --in_degrees[next_node.node_id] == 0) {
             asio::co_spawn(ctx, self->execute_node(next_node.node_id), asio::detached);
         }

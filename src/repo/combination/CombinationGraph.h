@@ -67,7 +67,7 @@ class TopoSession : public std::enable_shared_from_this<TopoSession> {
     static void check_async_running();
 public:
     TopoSession(asio::io_context& c, const CombinationGraph& g);
-    static void exec(const CombinationGraph &graph);
+    static void exec(const CombinationGraph &graph, bool async=false);
     static void asyncExec(int graph_id);
     static void stopAsyncExec();
     static void setAsyncExecStatus(combination::graph::GetAsyncExecStatusResponse *response);
