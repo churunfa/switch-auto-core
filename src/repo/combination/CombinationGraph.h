@@ -18,7 +18,6 @@ struct CombinationEdge;
 class CombinationGraph {
     std::optional<Combination> combination = std::nullopt;
     std::optional<CombinationNode> start_node = std::nullopt;
-    std::optional<CombinationNode> end_node = std::nullopt;
 
     std::map<int, CombinationNode> node_map;
     std::map<int, CombinationEdge> edge_map;
@@ -29,7 +28,6 @@ public:
     CombinationGraph(const CombinationGraph& combination);
     const std::optional<Combination>& getCombination() const;
     const std::optional<CombinationNode>& getStartNode() const;
-    const std::optional<CombinationNode>& getEndNode() const;
     std::vector<const CombinationNode*> getCombinationNode() const;
     std::vector<const CombinationEdge*> getCombinationEdge() const;
     const CombinationNode& getNodeById(int id) const;

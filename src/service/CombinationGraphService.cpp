@@ -68,7 +68,14 @@ namespace service {
         }
 
         const auto build_graph = CombinationGraph(build_combination, build_nodes, build_edges);
-        CombinationRepo::insertGraph(build_graph);
+        try {
+            CombinationRepo::insertGraph(build_graph);
+        } catch (const std::exception& e) {
+            // 返回带错误信息的 Status
+            return grpc::Status(grpc::StatusCode::INTERNAL,
+                               std::string("InsertGraph failed: ") + e.what());
+        }
+
 
         response->set_success(true);
         return grpc::Status::OK;

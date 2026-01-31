@@ -106,8 +106,9 @@ void updateOrSaveGraphCore(const CombinationGraph &graph, const bool insert) {
             return true; // 提交事务
         });
     } catch (const std::exception& e) {
-        std::cerr << "Transaction failed: " << e.what() << std::endl;
-        throw std::out_of_range("写入失败");
+        std::string msg = e.what();
+        std::cerr << "Transaction failed: " << msg << std::endl;
+        throw std::out_of_range("写入失败" + msg);
     }
 }
 
@@ -176,7 +177,6 @@ CombinationGraph:: // 深拷贝构造函数
     CombinationGraph(const CombinationGraph& other)
         : combination(other.combination),
           start_node(other.start_node),
-          end_node(other.end_node),
           node_map(other.node_map),
           edge_map(other.edge_map),
           out_edge(other.out_edge) {
@@ -189,9 +189,6 @@ CombinationGraph::CombinationGraph(Combination& combination, const std::vector<C
         this -> node_map[node.node_id] = node;
         if (node.base_operate -> ename == "START_EMPTY") {
             this -> start_node = node;
-        }
-        if (node.base_operate->ename == "END_EMPTY") {
-            this -> end_node = node;
         }
     }
     for (const auto& edge : edges) {
@@ -212,10 +209,6 @@ const std::optional<Combination>& CombinationGraph::getCombination() const {
 
 const std::optional<CombinationNode>& CombinationGraph::getStartNode() const {
     return start_node;
-}
-
-const std::optional<CombinationNode>& CombinationGraph::getEndNode() const {
-    return end_node;
 }
 
 std::vector<const CombinationNode*> CombinationGraph::getCombinationNode() const {
