@@ -19,6 +19,10 @@ service CombinationGraphService {
     rpc DeleteGraph (IntValue) returns (base.SimpleResponse) {}
     rpc ExecGraph(CombinationGraph) returns (base.SimpleResponse) {};
     rpc ExecGraphById(IntValue) returns (base.SimpleResponse) {};
+    rpc AsyncExecGraph(IntValue) returns (base.SimpleResponse) {};
+    rpc StopAsyncExecGraph(google.protobuf.Empty) returns (base.SimpleResponse) {};
+    rpc GetAsyncExecStatus(google.protobuf.Empty) returns (GetAsyncExecStatusResponse) {};
+
 }
 
 message Combination {
@@ -69,4 +73,11 @@ message GetAllProjectResponse {
 
 message GetAllGraphResponse {
     repeated Combination combinations = 1;
+}
+
+message GetAsyncExecStatusResponse {
+    bool async_running = 1;
+    int32 graph_id = 2;
+    int64 async_start_time = 3;
+    int64 async_exec_cnt = 4;
 }

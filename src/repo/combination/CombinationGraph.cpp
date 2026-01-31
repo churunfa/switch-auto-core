@@ -3,10 +3,11 @@
 //
 
 #include "CombinationGraph.h"
+
+#include "combination_graph.pb.h"
 #include "exec/base/BaseOperationProcess.h"
 #include "exec/coroutine/CoroutineUtils.h"
 #include "repo/DatabaseManager.h"
-#include "service/mapper/CombinationGraphMapper.h"
 
 namespace asio = boost::asio;
 
@@ -278,13 +279,21 @@ asio::awaitable<void> TopoSession::execCore(const CombinationGraph &graph) {
     asio::co_spawn(ctx, runNode(*graph.getStartNode()), asio::detached);
 }
 
-void TopoSession::exec(const CombinationGraph &g) {
-    if (!g.getStartNode()) {
+void TopoSession::check_async_running() {
+    std::lock_guard lock(async_running_mtx);
+    if (async_running) {
+        throw std::out_of_range("已存在运行中的任务：" + std::to_string(running_graph_id));
+    }
+}
+
+void TopoSession::exec(const CombinationGraph &graph) {
+    check_async_running();
+
+    if (!graph.getStartNode()) {
         throw std::runtime_error("拓扑图结构异常，不存在起始节点");
     }
 
     try {
-        auto graph = CombinationGraph(g);
         asio::io_context ctx;
         const auto session = std::make_shared<TopoSession>(ctx, graph);
         session->run();
@@ -292,6 +301,31 @@ void TopoSession::exec(const CombinationGraph &g) {
     } catch (std::exception& e) {
         std::cerr << "拓扑图计算异常: " << e.what() << std::endl;
     }
+}
+
+void TopoSession::asyncExec(const int graph_id) {
+    check_async_running();
+
+    const auto combination_graph = CombinationRepo::getGraphById(graph_id);
+    if (!combination_graph) {
+        throw std::out_of_range("任务不存在，id：" + std::to_string(graph_id));
+    }
+
+    std::lock_guard lock(async_running_mtx);
+    async_running = true;
+
+    // 获取当前时间戳
+    const auto now = std::chrono::system_clock::now();
+    async_start_time = std::chrono::time_point_cast<std::chrono::milliseconds>(now).time_since_epoch().count();
+
+    async_exec_cnt = 0;
+    worker = std::thread(&TopoSession::exec, *combination_graph);
+}
+
+void TopoSession::stopAsyncExec() {
+    std::lock_guard lock(async_running_mtx);
+    async_running = false;
+    worker.join();
 }
 
 asio::awaitable<void> TopoSession::execute_node(int node_id) {
@@ -304,17 +338,30 @@ asio::awaitable<void> TopoSession::execute_node(int node_id) {
     std::cout << "[DEBUG] Start execute_node: " << node.node_id
             << ", ename: " << node.base_operate->ename << ",reset:" << node.reset << std::endl;
 
-    if (node.base_operate->ename == "END_EMPTY") {
-        co_return;
-    }
-
     try {
         co_await runNode(node);
     } catch (const std::exception& e) {
         std::cerr << "Exception in runNode: " << e.what() << std::endl;
     }
 
-    for (const auto next_edges = graph.outEdge(node.node_id); const auto next_edge : next_edges) {
+    const auto next_edges = graph.outEdge(node.node_id);
+    if (next_edges.empty()) {
+        // 执行完了
+        std::lock_guard lock(async_running_mtx);
+
+        if (async_running) {
+            // 需要异步执行，从头执行
+            in_degrees.clear();
+            for (const auto edge : graph.getCombinationEdge()) {
+                ++in_degrees[edge->next_combination_id];
+            }
+            asio::co_spawn(ctx, self->execute_node(graph.getStartNode() -> node_id), asio::detached);
+            ++async_exec_cnt;
+        }
+        co_return;
+    }
+
+    for (const auto next_edge : next_edges) {
         if (const auto next_node = graph.getNodeById(next_edge.next_combination_id); --in_degrees[next_node.node_id] == 0) {
             asio::co_spawn(ctx, self->execute_node(next_node.node_id), asio::detached);
         }
@@ -324,8 +371,17 @@ asio::awaitable<void> TopoSession::execute_node(int node_id) {
 TopoSession::TopoSession(asio::io_context& c, const CombinationGraph& g) : ctx(c), graph(g) {}
 
 void TopoSession::run() {
+    std::lock_guard lock(async_running_mtx);
     for (const auto edge : graph.getCombinationEdge()) {
         ++in_degrees[edge->next_combination_id];
     }
     asio::co_spawn(ctx, execute_node(graph.getStartNode()->node_id), asio::detached);
+}
+
+void TopoSession::setAsyncExecStatus(combination::graph::GetAsyncExecStatusResponse *response) {
+    std::lock_guard lock(async_running_mtx);
+    response->set_async_running(async_running);
+    response->set_graph_id(running_graph_id);
+    response->set_async_start_time(async_start_time);
+    response->set_async_exec_cnt(async_exec_cnt);
 }

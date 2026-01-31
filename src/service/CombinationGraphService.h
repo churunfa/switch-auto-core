@@ -35,6 +35,15 @@ namespace service {
 
         grpc::Status ExecGraphById(grpc::ServerContext *context, const combination::graph::IntValue *request,
         base::SimpleResponse *response) override;
+
+        grpc::Status AsyncExecGraph(grpc::ServerContext *context, const combination::graph::IntValue *request,
+        base::SimpleResponse *response) override;
+
+        grpc::Status StopAsyncExecGraph(grpc::ServerContext *context, const google::protobuf::Empty *request,
+        base::SimpleResponse *response) override;
+
+        grpc::Status GetAsyncExecStatus(grpc::ServerContext *context, const google::protobuf::Empty *request,
+                                        combination::graph::GetAsyncExecStatusResponse *response) override;
     };
 
 } // namespace service

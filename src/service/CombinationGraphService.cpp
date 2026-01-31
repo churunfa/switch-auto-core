@@ -104,4 +104,23 @@ namespace service {
         response->set_success(true);
         return grpc::Status::OK;
     }
+    grpc::Status CombinationGraphServiceImpl::AsyncExecGraph(grpc::ServerContext *context, const combination::graph::IntValue *request,
+        base::SimpleResponse *response) {
+        TopoSession::asyncExec(request -> value());
+        response->set_success(true);
+        return grpc::Status::OK;
+    }
+
+    grpc::Status CombinationGraphServiceImpl::StopAsyncExecGraph(grpc::ServerContext *context, const google::protobuf::Empty *request,
+        base::SimpleResponse *response) {
+        TopoSession::stopAsyncExec();
+        response->set_success(true);
+        return grpc::Status::OK;
+    }
+
+    grpc::Status CombinationGraphServiceImpl::GetAsyncExecStatus(grpc::ServerContext *context, const google::protobuf::Empty *request,
+                                        combination::graph::GetAsyncExecStatusResponse *response) {
+        TopoSession::setAsyncExecStatus(response);
+        return grpc::Status::OK;
+    }
 }
