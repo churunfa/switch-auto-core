@@ -5,6 +5,9 @@
 
 #include "CombinationGraphMapper.h"
 
+#include <nlohmann/json.hpp>
+#include <nlohmann/json_fwd.hpp>
+
 #include "BaseOperateMapper.h"
 #include "combination_graph.pb.h"
 #include "repo/combination/Combination.h"
@@ -26,13 +29,14 @@ void CombinationGraphMapper::FillEdgeProto(const CombinationEdge& src, combinati
 void CombinationGraphMapper::FillNodeProto(const CombinationNode& src, combination::graph::CombinationNode* dest) {
     dest->set_node_id(src.node_id);
     dest->set_node_name(src.node_name);
-    BaseOperateMapper::FillBaseOperateProto(*src.base_operate, dest->mutable_base_operate());
+    for (auto base_operate : src.base_operates) {
+        BaseOperateMapper::FillBaseOperateProto(base_operate, dest->add_base_operates());
+    }
     dest->set_params(src.params);
     dest->set_exec_hold_time(src.exec_hold_time);
-    dest->set_reset_hold_time(src.reset_hold_time);
     dest->set_loop_cnt(src.loop_cnt);
-    dest->set_exec(src.exec);
-    dest->set_reset(src.reset);
+    dest->set_resets(src.resets);
+    dest->set_auto_resets(src.auto_resets);
 }
 
 CombinationGraph CombinationGraphMapper::buildGraph(const combination::graph::CombinationGraph *graph) {
@@ -73,14 +77,20 @@ CombinationNode CombinationGraphMapper::buildNode(const Combination& combination
     res.node_name = node.node_name();
     res.combination_id = combination.id;
     res.combination = std::make_shared<Combination>(combination);
-    res.base_operate_id = node.base_operate().id();
-    res.base_operate = std::make_shared<BaseOperate>(BaseOperateMapper::buildBaseOperate(node.base_operate()));
+
+    std::vector<int> ids;
+    ids.reserve(node.base_operates_size());
+    for (auto base_operate : node.base_operates()) {
+        ids.push_back(base_operate.id());
+    }
+    const nlohmann::json j = ids;
+    res.base_operate_ids = j.dump();
+    res.base_operates = BaseOperateMapper::buildBaseOperates(node.base_operates());
     res.params = node.params();
     res.exec_hold_time = node.exec_hold_time();
-    res.reset_hold_time = node.reset_hold_time();
     res.loop_cnt = node.loop_cnt();
-    res.exec = node.exec();
-    res.reset = node.reset();
+    res.resets = node.resets();
+    res.auto_resets = node.auto_resets();
     return res;
 }
 

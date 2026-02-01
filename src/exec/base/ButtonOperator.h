@@ -47,7 +47,6 @@ public:
         } else {
             switch_control_library.pressButton(button_type);
         }
-        switch_control_library.sendReport();
         return true;
     }
 };

@@ -61,7 +61,7 @@ struct BaseOperate {
 
             {0, "IMU", "体感", 6, R"(["accX","accY","accZ","gyroX","gyroY","gyroZ"])", "[0, 0, -4096, 0, 0, 0]", default_min_time, default_min_time},
 
-            {0, "LEFT_STICK_CIRCLE", "左遥感旋转一圈", 0, "[]", "[]", default_min_time * 8, default_min_time},
+            {0, "LEFT_STICK_CIRCLE", "左遥感旋转一圈", 0, "[]", "[]", default_min_time * 8, 0, false},
             {0, "RESET_ALL", "重置所有按键", 0, "[]", "[]", default_min_time, default_min_time, false},
             {0, "SLEEP", "等待时间", 0, "[]", "[]", 200, 0, false},
             {0, "START_EMPTY", "开始", 0, "[]", "[]", 0, 0, false},

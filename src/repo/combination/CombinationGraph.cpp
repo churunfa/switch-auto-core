@@ -131,7 +131,12 @@ std::vector<Combination> CombinationRepo::allGraph(const std::string &project_na
 std::vector<CombinationNode> allCombinationNode(const int combination_id) {
     auto combination_nodes = db.get_all<CombinationNode>(where(c(&CombinationNode::combination_id) == combination_id));
     for (const auto& node : combination_nodes) {
-        if (auto ptr = db.get_pointer<BaseOperate>(node.base_operate_id)) node.base_operate = std::move(ptr);
+        for (std::vector<int> id_json_array = nlohmann::json::parse(node.base_operate_ids); const auto base_operate_id : id_json_array) {
+            if (auto ptr = db.get_pointer<BaseOperate>(base_operate_id)) {
+                node.base_operates.emplace_back(*ptr);
+            }
+        }
+
         if (auto ptr = db.get_pointer<Combination>(node.combination_id)) node.combination = std::move(ptr);
     }
     return combination_nodes;
@@ -187,7 +192,7 @@ CombinationGraph::CombinationGraph(Combination& combination, const std::vector<C
     this->combination = combination;
     for (const auto& node : nodes) {
         this -> node_map[node.node_id] = node;
-        if (node.base_operate -> ename == "START_EMPTY") {
+        if (auto base_operates = node.base_operates; base_operates.size() == 1 && base_operates.front().ename == "START_EMPTY") {
             this -> start_node = node;
         }
     }
@@ -244,23 +249,38 @@ const std::vector<CombinationEdge>& CombinationGraph::outEdge(const int node_id)
 }
 
 asio::awaitable<void> TopoSession::runNode(const CombinationNode &node) {
-    for (int i = 0; i < node.loop_cnt; i++) {
-        if (node.exec) {
-            BaseOperationProcess::getInstance().run(*node.base_operate, node.params, false);
-            if (node.exec_hold_time != 0) {
-                int exec_sleep_time = node.exec_hold_time;
-                co_await coroutine::async_sleep_task(exec_sleep_time);
-            }
-        }
-        if (node.reset) {
-            BaseOperationProcess::getInstance().run(*node.base_operate, node.params, true);
-
-            if (node.reset_hold_time != 0) {
-                const int reset_sleep_time = node.reset_hold_time;
-                co_await coroutine::async_sleep_task(reset_sleep_time);
-            }
+    auto auto_resets_str = node.auto_resets;
+    const std::vector<bool> auto_reset_vec = nlohmann::json::parse(auto_resets_str);;
+    bool has_auto_reset = false;
+    for (auto reset_vec : auto_reset_vec) {
+        if (reset_vec) {
+            has_auto_reset = true;
         }
     }
+    for (int i = 0; i < node.loop_cnt; i++) {
+        BaseOperationProcess::getInstance().batch_run(node.base_operates, node.params, node.resets);
+        const int exec_sleep_time = has_auto_reset ? node.exec_hold_time / 2 : node.exec_hold_time;
+        const int auto_reset_sleep_time = has_auto_reset ? node.exec_hold_time / 2 : 0;
+        // std::cout<<node.node_name<<' '<<node.resets<<' '<<node.auto_resets<<std::endl;
+        if (exec_sleep_time != 0) {
+            co_await coroutine::async_sleep_task(exec_sleep_time);
+        }
+
+        if (has_auto_reset) {
+            const auto params_vec = get_param_vector(node.params);
+            for (int j = 0; j < auto_reset_vec.size(); ++j) {
+                if (auto_reset_vec[j]) {
+                    BaseOperationProcess::getInstance().run(node.base_operates[j], params_vec[j], true);
+                }
+            }
+            switch_control_library.sendReport();
+        }
+        if (auto_reset_sleep_time != 0) {
+            co_await coroutine::async_sleep_task(exec_sleep_time);
+        }
+
+    }
+    switch_control_library.sendReport();
 }
 
 asio::awaitable<void> TopoSession::execCore(const CombinationGraph &graph) {

@@ -36,13 +36,12 @@ message Combination {
 message CombinationNode {
     int32 node_id = 1;
     string node_name = 2;
-    base.operate.BaseOperate base_operate = 3;
+    repeated base.operate.BaseOperate base_operates = 3;
     string params = 4;
     int32 exec_hold_time = 5;
-    int32 reset_hold_time = 6;
-    int32 loop_cnt = 7;
-    bool exec = 8;
-    bool reset = 9;
+    int32 loop_cnt = 6;
+    string resets = 7;
+    string auto_resets = 8;
 }
 
 message CombinationEdge {

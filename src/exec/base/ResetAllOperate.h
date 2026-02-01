@@ -14,7 +14,6 @@ public:
             return false;
         }
         switch_control_library.resetAll();
-        switch_control_library.sendReport();
         return true;
     }
 };

@@ -22,3 +22,12 @@ void BaseOperateMapper::FillBaseOperateProto(const BaseOperate& src, base::opera
 BaseOperate BaseOperateMapper::buildBaseOperate(const base::operate::BaseOperate &proto) {
     return {proto.id(), proto.ename(), proto.name(), proto.param_size(), proto.param_names(), proto.init_params(), proto.min_reset_time()};
 }
+
+std::vector<BaseOperate> BaseOperateMapper::buildBaseOperates(const google::protobuf::RepeatedPtrField<base::operate::BaseOperate> &protos) {
+    std::vector<BaseOperate> res;
+    res.reserve(protos.size());
+    for (auto proto : protos) {
+        res.emplace_back(buildBaseOperate(proto));
+    }
+    return res;
+}

@@ -16,7 +16,6 @@ public:
         }
         if (reset) {
             switch_control_library.resetIMU();
-            switch_control_library.sendReport();
         } else {
             const auto param_vector = get_param_vector(params);
             const auto accX = static_cast<int16_t>(std::stoi(param_vector[0]));
@@ -26,7 +25,6 @@ public:
             const auto gyroY = static_cast<int16_t>(std::stoi(param_vector[4]));
             const auto gyroZ = static_cast<int16_t>(std::stoi(param_vector[5]));
             switch_control_library.setIMU(accX, accY, accZ, gyroX, gyroY, gyroZ);
-            switch_control_library.sendReport();
         }
         return true;
     }

@@ -21,7 +21,6 @@ public:
         if (base_operate.ename == "LEFT_STICK") {
             if (reset) {
                 switch_control_library.resetLeftAnalog();
-                switch_control_library.sendReport();
                 return true;
             }
             const auto param_vector = get_param_vector(params);
@@ -29,20 +28,17 @@ public:
             const int y = standard(std::stoi(param_vector[1]));
 
             switch_control_library.moveLeftAnalog(x, y);
-            switch_control_library.sendReport();
             return true;
         }
         if (base_operate.ename == "RIGHT_STICK") {
             if (reset) {
                 switch_control_library.resetRightAnalog();
-                switch_control_library.sendReport();
                 return true;
             }
             const auto param_vector = get_param_vector(params);
             const int x = standard(std::stoi(param_vector[0]));
             const int y = standard(std::stoi(param_vector[1]));
             switch_control_library.moveRightAnalog(x, y);
-            switch_control_library.sendReport();
             return true;
         }
         return false;

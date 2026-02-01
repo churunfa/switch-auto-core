@@ -32,6 +32,18 @@ public:
         }
         throw std::out_of_range("不支持的操作类型：" + base_operate.ename);
     }
+    void batch_run(const std::vector<BaseOperate>& base_operates, const std::string& params, const std::string &resets) const {
+        const int size = base_operates.size();
+        const auto params_vec = get_param_vector(params);
+        const std::vector<bool> reset_vec = nlohmann::json::parse(resets);;
+        if (size != params_vec.size() || size != reset_vec.size()) {
+            throw std::out_of_range("参数个数不匹配");
+        }
+        for (int i = 0; i < size; ++i) {
+            run(base_operates[i], params_vec[i], reset_vec[i]);
+        }
+        switch_control_library.sendReport();
+    }
     static BaseOperationProcess& getInstance() {
         static BaseOperationProcess instance;
         return instance;

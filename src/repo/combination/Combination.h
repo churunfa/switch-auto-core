@@ -43,21 +43,19 @@ struct CombinationNode {
     std::string node_name;
     int combination_id;
     mutable std::shared_ptr<Combination> combination;
-    int base_operate_id;
-    mutable std::shared_ptr<BaseOperate> base_operate;
+    std::string base_operate_ids;
+    mutable std::vector<BaseOperate> base_operates;
     std::string params;
+    std::string resets;
+    std::string auto_resets;
     int exec_hold_time;
-    int reset_hold_time;
     int loop_cnt;
-    bool exec;
-    bool reset;
     CombinationNode() = default;
-    CombinationNode(const CombinationNode& other) : id(other.id), node_id(other.node_id),node_name(other.node_name),combination(other.combination),
-                                                    combination_id(other.combination_id),base_operate(other.base_operate),
-                                                    base_operate_id(other.base_operate_id), params(other.params),
-                                                    exec_hold_time(other.exec_hold_time),
-                                                    reset_hold_time(other.reset_hold_time), loop_cnt(other.loop_cnt),
-                                                    exec(other.exec), reset(other.reset) {
+    CombinationNode(const CombinationNode& other) : id(other.id), node_id(other.node_id),node_name(other.node_name),combination_id(other.combination_id),
+                                                    combination(other.combination),base_operate_ids(other.base_operate_ids),
+                                                    base_operates(other.base_operates), params(other.params),
+                                                    resets(other.resets),auto_resets(other.auto_resets),
+                                                    exec_hold_time(other.exec_hold_time), loop_cnt(other.loop_cnt) {
     }
 
     static auto getDescription() {
@@ -66,13 +64,12 @@ struct CombinationNode {
             make_column("node_id", &CombinationNode::node_id),
             make_column("node_name", &CombinationNode::node_name),
             make_column("combination_id", &CombinationNode::combination_id),
-            make_column("base_operate_id", &CombinationNode::base_operate_id),
+            make_column("base_operate_ids", &CombinationNode::base_operate_ids),
             make_column("params", &CombinationNode::params),
             make_column("exec_hold_time", &CombinationNode::exec_hold_time),
-            make_column("reset_hold_time", &CombinationNode::reset_hold_time),
             make_column("loop_cnt", &CombinationNode::loop_cnt),
-            make_column("exec", &CombinationNode::exec, default_value(true)),
-            make_column("reset", &CombinationNode::reset, default_value(true)),
+            make_column("resets", &CombinationNode::resets),
+            make_column("auto_resets", &CombinationNode::auto_resets),
 
             unique(&CombinationNode::combination_id, &CombinationNode::node_id)
         );
