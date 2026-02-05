@@ -175,10 +175,9 @@ public:
         dirent* ent;
         if (dir) {
             while ((ent = readdir(dir)) != nullptr) {
-                std::string name = ent->d_name;
-                if (name.find("tty.wchusbserial") != std::string::npos  ||
-                    name.find("cu.usbmodem") != std::string::npos ||
-                    name.find("cu.usbserial") != std::string::npos) {
+                if (std::string name = ent->d_name; name.find("tty.wchusbserial") != std::string::npos  ||
+                                                    name.find("cu.usbmodem") != std::string::npos ||
+                                                    name.find("cu.usbserial") != std::string::npos) {
                     closedir(dir);
                     return "/dev/" + name;
                     }
@@ -188,7 +187,7 @@ public:
         return "";
 #endif
     }
-    bool IsConnected() const {
+    [[nodiscard]] bool IsConnected() const {
 #ifdef _WIN32
         return hSerial != INVALID_HANDLE_VALUE;
 #else
