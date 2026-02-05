@@ -30,12 +30,12 @@ namespace service {
             return {grpc::StatusCode::NOT_FOUND, "BaseOperate ID not found"};
         }
 
-        BaseOperate& entity = entity_opt.value();
+        const BaseOperate& entity = entity_opt.value();
         std::string params = request->params();
         const bool should_reset = request->reset();
 
         try {
-            BaseOperationProcess::getInstance().run(entity, params, should_reset);
+            BaseOperationProcess::getInstance().run(entity, nlohmann::json::parse(params), should_reset);
             response->set_success(true);
             return grpc::Status::OK;
 

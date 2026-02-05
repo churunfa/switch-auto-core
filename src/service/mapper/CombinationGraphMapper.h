@@ -21,6 +21,7 @@ public:
     static void FillNodeProto(const CombinationNode& src, combination::graph::CombinationNode* dest);
     static void FillEdgeProto(const CombinationEdge& src, combination::graph::CombinationEdge* dest);
     static void FillCombinationProto(const Combination& src, combination::graph::Combination* dest);
+    static void FillNodeJsonParams(CombinationNode& node);
 
     static CombinationGraph buildGraph(const combination::graph::CombinationGraph* graph);
     static Combination buildCombination(const combination::graph::Combination& combination);

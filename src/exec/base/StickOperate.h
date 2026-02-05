@@ -17,15 +17,14 @@ inline int standard(const int x) {
 
 class StickOperator : public OperatorStrategy {
 public:
-    [[nodiscard]] bool execute(const BaseOperate& base_operate, const std::string& params, const bool reset) const override {
+    [[nodiscard]] bool execute(const BaseOperate& base_operate, const std::vector<int>& params, const bool reset) const override {
         if (base_operate.ename == "LEFT_STICK") {
             if (reset) {
                 switch_control_library.resetLeftAnalog();
                 return true;
             }
-            const auto param_vector = get_param_vector(params);
-            const int x = standard(std::stoi(param_vector[0]));
-            const int y = standard(std::stoi(param_vector[1]));
+            const int x = standard(params[0]);
+            const int y = standard(params[1]);
 
             switch_control_library.moveLeftAnalog(x, y);
             return true;
@@ -35,9 +34,8 @@ public:
                 switch_control_library.resetRightAnalog();
                 return true;
             }
-            const auto param_vector = get_param_vector(params);
-            const int x = standard(std::stoi(param_vector[0]));
-            const int y = standard(std::stoi(param_vector[1]));
+            const int x = standard(params[0]);
+            const int y = standard(params[1]);
             switch_control_library.moveRightAnalog(x, y);
             return true;
         }

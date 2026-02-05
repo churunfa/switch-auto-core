@@ -10,6 +10,8 @@
 
 #include "BaseOperateMapper.h"
 #include "combination_graph.pb.h"
+#include "exec/base/OperatorStrategy.h"
+#include "repo/DatabaseManager.h"
 #include "repo/combination/Combination.h"
 
 void CombinationGraphMapper::FillCombinationProto(const Combination& src, combination::graph::Combination* dest) {
@@ -18,6 +20,23 @@ void CombinationGraphMapper::FillCombinationProto(const Combination& src, combin
     dest->set_combination_name(src.combination_name);
     dest->set_desc(src.desc);
     dest->set_min_time(src.min_time);
+}
+void CombinationGraphMapper::FillNodeJsonParams(CombinationNode& node) {
+    for (const std::vector<int> id_json_array = nlohmann::json::parse(node.base_operate_ids); const auto base_operate_id : id_json_array) {
+        if (auto ptr = db.get_pointer<BaseOperate>(base_operate_id)) {
+            node.base_operates.push_back(BaseOperate(*ptr));
+        }
+    }
+    const auto params_vec = get_param_vector(node.params);
+    std::vector<std::vector<int>> params;
+    for (auto vec : params_vec) {
+        params.push_back(nlohmann::json::parse(vec));
+    }
+    node.parse_params = params;
+    const std::vector<bool> reset_vec = nlohmann::json::parse(node.resets);;
+    node.parse_resets = reset_vec;
+    const std::vector<bool> auto_reset_vec = nlohmann::json::parse(node.auto_resets);;
+    node.parse_auto_resets = auto_reset_vec;
 }
 void CombinationGraphMapper::FillEdgeProto(const CombinationEdge& src, combination::graph::CombinationEdge* dest) {
     dest->set_edge_id(src.edge_id);
@@ -85,12 +104,13 @@ CombinationNode CombinationGraphMapper::buildNode(const Combination& combination
     }
     const nlohmann::json j = ids;
     res.base_operate_ids = j.dump();
-    res.base_operates = BaseOperateMapper::buildBaseOperates(node.base_operates());
     res.params = node.params();
     res.exec_hold_time = node.exec_hold_time();
     res.loop_cnt = node.loop_cnt();
     res.resets = node.resets();
     res.auto_resets = node.auto_resets();
+
+    FillNodeJsonParams(res);
     return res;
 }
 

@@ -17,6 +17,11 @@ namespace coroutine {
         co_await timer.async_wait(asio::use_awaitable);
     }
 
+    inline long long getCurrentTime() {
+        const auto now = std::chrono::system_clock::now();
+        return std::chrono::time_point_cast<std::chrono::milliseconds>(now).time_since_epoch().count();
+
+    }
 }
 
 #endif //SWITCH_AUTO_CORE_COROUTINEUTILS_H

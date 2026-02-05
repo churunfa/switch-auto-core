@@ -24,23 +24,21 @@ class BaseOperationProcess {
         strategies.push_back(std::make_unique<EmptyOperator>());
     }
 public:
-    void run(const BaseOperate& base_operate, const std::string& params, const bool reset) const {
+    void run(const BaseOperate& base_operate, const std::vector<int>& params, const bool reset) const {
         for (const auto& strategy : strategies) {
             if (strategy -> execute(base_operate, params, reset)) {
                 return;
             }
         }
-        throw std::out_of_range("不支持的操作类型：" + base_operate.ename);
+        throw std::out_of_range("不支持的操作类型：base_operate.id=" + std::to_string(base_operate.id) + ",base_operate.ename=" + base_operate.ename);
     }
-    void batch_run(const std::vector<BaseOperate>& base_operates, const std::string& params, const std::string &resets) const {
+    void batch_run(const std::vector<BaseOperate>& base_operates, const std::vector<std::vector<int>>& params, const std::vector<bool> &resets) const {
         const int size = base_operates.size();
-        const auto params_vec = get_param_vector(params);
-        const std::vector<bool> reset_vec = nlohmann::json::parse(resets);;
-        if (size != params_vec.size() || size != reset_vec.size()) {
+        if (size != params.size() || size != resets.size()) {
             throw std::out_of_range("参数个数不匹配");
         }
         for (int i = 0; i < size; ++i) {
-            run(base_operates[i], params_vec[i], reset_vec[i]);
+            run(base_operates[i], params[i], resets[i]);
         }
         switch_control_library.sendReport();
     }

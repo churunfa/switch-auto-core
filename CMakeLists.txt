@@ -5,6 +5,9 @@ set(CMAKE_CXX_STANDARD 23)
 
 add_definitions(-DDB_FILE_PATH="/Users/churunfa/Desktop/code/switch_auto.db")
 
+include_directories(/opt/homebrew/include)
+link_directories(/opt/homebrew/lib)
+
 include(FetchContent)
 
 FetchContent_Declare(
@@ -121,6 +124,7 @@ target_link_libraries(switch_auto_core PRIVATE
         gRPC::grpc++
         sqlite3
         sqlite_orm::sqlite_orm
+        serialport
 )
 
 set_directory_properties(PROPERTIES ADDITIONAL_CLEAN_FILES "${GEN_BASE_PATH}")

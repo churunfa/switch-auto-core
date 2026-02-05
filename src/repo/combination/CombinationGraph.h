@@ -61,7 +61,7 @@ class TopoSession : public std::enable_shared_from_this<TopoSession> {
     asio::awaitable<void> execute_node(int node_id);
     void run();
     static asio::awaitable<void> execCore(const CombinationGraph &graph);
-    static asio::awaitable<void> runNode(const CombinationNode &node);
+    static asio::awaitable<void> runNode(CombinationNode node);
     static void check_async_running();
 public:
     TopoSession(asio::io_context& c, const CombinationGraph& g);
