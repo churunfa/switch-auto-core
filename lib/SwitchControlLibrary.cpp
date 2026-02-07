@@ -94,7 +94,6 @@ void SwitchControlLibrary::loop(){
             }
         }
         if (port_name.empty()) {
-            std::cout << "[搜索中] 等待设备... \n";
             std::this_thread::sleep_for(std::chrono::seconds(1));
             continue;
         }
@@ -131,7 +130,6 @@ void SwitchControlLibrary::sendReport() {
         std::cout << "发送失败" << std::endl;
         return;
     }
-    std::cout<<std::endl;
     // 更新lastSwitchReport
     memcpy(&lastSwitchReport, &switchReport, sizeof(SwitchProReport));
 }
@@ -179,11 +177,14 @@ void SwitchControlLibrary::setIMU(const int16_t accX, const int16_t accY, const 
     resetImuStatus = false;
 }
 
+void printIMU(const int idx, const ImuData imuData) {
+    // printf("[%d]：%d,%d,%d,%d,%d,%d\n", idx, imuData.accX, imuData.accY, imuData.accZ, imuData.gyroX, imuData.gyroY, imuData.gyroZ);
+}
+
 void SwitchControlLibrary::setIMUCore(const int16_t accX, const int16_t accY, const int16_t accZ, const int16_t gyroX, const int16_t gyroY, const int16_t gyroZ) {
     std::lock_guard lock(reportMtx);
-    const long long currentTime = getCurrentTime();
     // IMU数据正常5ms采集一次，这里模拟下
-    if (currentTime > imuLastCollectTime + 5) {
+    if (const long long currentTime = getCurrentTime(); currentTime > imuLastCollectTime + 5) {
         for (int i = 0; i < 2; i++) {
             switchReport.imuData[i].accX = switchReport.imuData[i + 1].accX;
             switchReport.imuData[i].accY = switchReport.imuData[i + 1].accY;
@@ -200,6 +201,9 @@ void SwitchControlLibrary::setIMUCore(const int16_t accX, const int16_t accY, co
     switchReport.imuData[2].gyroX = gyroX;
     switchReport.imuData[2].gyroY = gyroY;
     switchReport.imuData[2].gyroZ = gyroZ;
+    printIMU(1, switchReport.imuData[0]);
+    printIMU(2, switchReport.imuData[1]);
+    printIMU(3, switchReport.imuData[2]);
 }
 
 void SwitchControlLibrary::resetIMU() {

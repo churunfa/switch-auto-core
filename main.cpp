@@ -1,11 +1,9 @@
 #include <iostream>
 #include <memory>
 #include <string>
-
 #include <grpcpp/grpcpp.h>
-
-// 引入由 protoc 编译器生成的头文件
 #include "SwitchControlLibrary.h"
+#include "controller/ControllerMonitor.h"
 #include "service/BaseOperateService.h"
 #include "service/CombinationGraphService.h"
 #include "src/repo/DatabaseManager.h"
@@ -30,6 +28,7 @@ void RunServer() {
 int main(int argc, char** argv) {
     DatabaseManager::getInstance();
     SwitchControlLibrary::getInstance();
+    ControllerMonitor::getInstance().start();
     RunServer();
     return 0;
 }

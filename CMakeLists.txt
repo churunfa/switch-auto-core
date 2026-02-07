@@ -24,6 +24,7 @@ FetchContent_MakeAvailable(sqlite_orm)
 find_package(Protobuf CONFIG REQUIRED)
 find_package(gRPC CONFIG REQUIRED)
 find_package(Boost CONFIG REQUIRED)
+find_package(SDL2 REQUIRED CONFIG)
 
 # ---------------------------------------------------------
 # 2. 定义 Proto 编译逻辑
@@ -73,6 +74,7 @@ add_custom_command(
 file(GLOB_RECURSE REPO_SOURCES "src/repo/*.cpp" "src/repo/*.h" "src/repo/base/*.cpp" "src/repo/base/*.h")
 file(GLOB_RECURSE REPO_SOURCES "src/repo/combination/*.cpp" "src/repo/combination/*.h")
 file(GLOB_RECURSE EXEC_SOURCES "src/exec/base/*.cpp" "src/exec/base/*.h")
+file(GLOB_RECURSE EXEC_SOURCES "src/controller/*.cpp" "src/controller/*.h")
 file(GLOB_RECURSE EXEC_SOURCES "lib/*.cpp" "lib/*.h")
 
 # ---------------------------------------------------------
@@ -104,6 +106,7 @@ set(ALL_SOURCES
         src/repo/base/IdGenerate.h
         src/repo/base/IdGenerate.cpp
         src/exec/coroutine/CoroutineUtils.h
+        src/controller/ControllerMonitor.h
 )
 add_executable(switch_auto_core ${ALL_SOURCES})
 
@@ -125,6 +128,8 @@ target_link_libraries(switch_auto_core PRIVATE
         sqlite3
         sqlite_orm::sqlite_orm
         serialport
+        SDL2::SDL2
+        SDL2::SDL2main
 )
 
 set_directory_properties(PROPERTIES ADDITIONAL_CLEAN_FILES "${GEN_BASE_PATH}")

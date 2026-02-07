@@ -28,7 +28,6 @@ static const std::unordered_map<std::string, ButtonType> StringToButtonTypeMap =
     {"BUTTON_ZL", ButtonType::BUTTON_ZL},
 };
 
-// 进阶：直接获取枚举值（带安全性检查）
 inline std::optional<ButtonType> getButtonType(const std::string& str) {
     if (const auto it = StringToButtonTypeMap.find(str); it != StringToButtonTypeMap.end()) return it->second;
     return std::nullopt;
