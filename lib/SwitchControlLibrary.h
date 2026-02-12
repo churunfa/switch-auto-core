@@ -39,6 +39,7 @@ typedef enum {
     BUTTON_LEFT_SR, // joy-con的SR键
     BUTTON_L,
     BUTTON_ZL,
+    BUTTON_NONE,
 } ButtonType;
 
 class SwitchControlLibrary {

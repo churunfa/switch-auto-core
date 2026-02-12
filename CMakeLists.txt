@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.24)
 project(switch_auto_core)
 
+# Fusion 是 C 语言库，这里保持 CXX 标准的同时，CMake 会自动处理 C 语言编译
 set(CMAKE_CXX_STANDARD 23)
 
 add_definitions(-DDB_FILE_PATH="/Users/churunfa/Desktop/code/switch_auto.db")
@@ -24,13 +25,11 @@ FetchContent_MakeAvailable(sqlite_orm)
 find_package(Protobuf CONFIG REQUIRED)
 find_package(gRPC CONFIG REQUIRED)
 find_package(Boost CONFIG REQUIRED)
-find_package(SDL2 REQUIRED CONFIG)
+# SDL3 查找
+find_package(SDL3 REQUIRED CONFIG REQUIRED COMPONENTS SDL3)
 
 # ---------------------------------------------------------
 # 2. 定义 Proto 编译逻辑
-# ---------------------------------------------------------
-# ---------------------------------------------------------
-# 2. 全量定义 Proto 编译逻辑 (避免循环调用)
 # ---------------------------------------------------------
 set(GEN_BASE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/generated")
 set(GEN_CPP_PATH  "${GEN_BASE_PATH}/cpp")
@@ -48,7 +47,6 @@ file(GLOB_RECURSE PROTO_FILES "proto/*.proto")
 set(PROTO_GEN_SRCS "")
 set(PROTO_GEN_HDRS "")
 
-# 预先构建输出文件列表，让 CMake 知道要等这些文件生成
 foreach(FIL ${PROTO_FILES})
     get_filename_component(FIL_WE ${FIL} NAME_WE)
     list(APPEND PROTO_GEN_SRCS "${GEN_CPP_PATH}/${FIL_WE}.pb.cc" "${GEN_GRPC_PATH}/${FIL_WE}.grpc.pb.cc")
@@ -62,64 +60,56 @@ add_custom_command(
         --grpc_out=${GEN_GRPC_PATH}
         -I ${CMAKE_CURRENT_SOURCE_DIR}/proto
         --plugin=protoc-gen-grpc=${_GRPC_CPP_PLUGIN_EXECUTABLE}
-        ${PROTO_FILES}  # 这里传入整个文件列表
+        ${PROTO_FILES}
         DEPENDS ${PROTO_FILES}
-        COMMENT "Generating ALL Proto/gRPC files at once to ensure table consistency"
+        COMMENT "Generating Proto/gRPC files"
         VERBATIM
 )
 
 # ---------------------------------------------------------
-# 3. 准备源文件
+# 3. 准备源文件 (自动扫描)
 # ---------------------------------------------------------
-file(GLOB_RECURSE REPO_SOURCES "src/repo/*.cpp" "src/repo/*.h" "src/repo/base/*.cpp" "src/repo/base/*.h")
-file(GLOB_RECURSE REPO_SOURCES "src/repo/combination/*.cpp" "src/repo/combination/*.h")
-file(GLOB_RECURSE EXEC_SOURCES "src/exec/base/*.cpp" "src/exec/base/*.h")
-file(GLOB_RECURSE EXEC_SOURCES "src/controller/*.cpp" "src/controller/*.h")
-file(GLOB_RECURSE EXEC_SOURCES "lib/*.cpp" "lib/*.h")
+# [修复] 扫描 Fusion 的 .c 文件 (Fusion 是纯 C 库)
+file(GLOB FUSION_SOURCES "Fusion/*.c")
+
+# 扫描其他 C++ 文件
+file(GLOB_RECURSE REPO_SOURCES "src/repo/*.cpp" "src/repo/*.h")
+file(GLOB_RECURSE EXEC_SOURCES "src/exec/*.cpp" "src/exec/*.h" "src/controller/*.cpp" "src/controller/*.h")
+file(GLOB_RECURSE SERVICE_SOURCES "src/service/*.cpp" "src/service/*.h")
+file(GLOB_RECURSE LIB_SOURCES "lib/*.cpp" "lib/*.h")
 
 # ---------------------------------------------------------
 # 4. 创建可执行文件
 # ---------------------------------------------------------
+# [注意] 我删除了下面手动列出的具体 .cpp 文件，因为上面的 GLOB_RECURSE 已经包含它们了。
+# 如果同时保留，链接器会报错 "multiple definition" 或 CMake 会警告。
 set(ALL_SOURCES
         main.cpp
         ${PROTO_GEN_SRCS}
         ${PROTO_GEN_HDRS}
+        ${FUSION_SOURCES}   # 添加 Fusion 源码
         ${REPO_SOURCES}
         ${EXEC_SOURCES}
-        src/exec/base/StickOperate.h
-        src/exec/base/ImuOperator.h
-        src/exec/base/ResetAllOperate.h
-        src/exec/base/BaseOperationProcess.h
-        src/repo/combination/combination.h
-        src/repo/base/BaseOperate.cpp
-        src/repo/combination/CombinationGraph.cpp
-        src/repo/combination/CombinationGraph.h
-        src/exec/base/EmptyOperate.h
-        src/service/BaseOperateService.cpp
-        src/service/BaseOperateService.h
-        src/service/CombinationGraphService.cpp
-        src/service/CombinationGraphService.h
-        src/service/mapper/BaseOperateMapper.h
-        src/service/mapper/CombinationGraphMapper.h
-        src/service/mapper/BaseOperateMapper.cpp
-        src/service/mapper/CombinationGraphMapper.cpp
-        src/repo/base/IdGenerate.h
-        src/repo/base/IdGenerate.cpp
-        src/exec/coroutine/CoroutineUtils.h
-        src/controller/ControllerMonitor.h
+        ${SERVICE_SOURCES}
+        ${LIB_SOURCES}
 )
+
 add_executable(switch_auto_core ${ALL_SOURCES})
 
 # ---------------------------------------------------------
 # 5. 配置 Include 路径和链接库
 # ---------------------------------------------------------
-target_include_directories(switch_auto_core PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
-target_include_directories(switch_auto_core PRIVATE src)
-target_include_directories(switch_auto_core PRIVATE lib)
-target_include_directories(switch_auto_core PRIVATE ${GEN_CPP_PATH})
-target_include_directories(switch_auto_core PRIVATE ${GEN_GRPC_PATH})
-target_include_directories(switch_auto_core PRIVATE ${bs_thread_pool_SOURCE_DIR}/include)
-target_include_directories(switch_auto_core PRIVATE ${Boost_INCLUDE_DIRS})
+target_include_directories(switch_auto_core PRIVATE
+        ${CMAKE_CURRENT_BINARY_DIR}
+        src
+        lib
+        Fusion                      # 允许直接包含 "Fusion.h" (虽然 Fusion 官方推荐下一行的写法)
+        ${CMAKE_CURRENT_SOURCE_DIR} # [重要] 允许 #include "Fusion/Fusion.h" 这种写法
+        ${GEN_CPP_PATH}
+        ${GEN_GRPC_PATH}
+        ${bs_thread_pool_SOURCE_DIR}/include
+        ${Boost_INCLUDE_DIRS}
+)
 
 target_link_libraries(switch_auto_core PRIVATE
         protobuf::libprotobuf
@@ -128,8 +118,7 @@ target_link_libraries(switch_auto_core PRIVATE
         sqlite3
         sqlite_orm::sqlite_orm
         serialport
-        SDL2::SDL2
-        SDL2::SDL2main
+        SDL3::SDL3
 )
 
 set_directory_properties(PROPERTIES ADDITIONAL_CLEAN_FILES "${GEN_BASE_PATH}")

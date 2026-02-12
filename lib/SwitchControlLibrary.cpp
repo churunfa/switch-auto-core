@@ -13,8 +13,17 @@ long long getCurrentTime() {
 
 }
 
-constexpr ImuData gravitationImuData[3] = {{0, -4090, 0}, {0, -4090, 0}, {0, -4090, 0}};
+void printIMU(const int idx, const ImuData imuData) {
+    if (imuData.gyroX != 0 || imuData.gyroY != 0 || imuData.gyroZ != 0) {
+        // printf("[%d][%lld]：%d,%d,%d,%d,%d,%d\n", idx, getCurrentTime(), imuData.accX.value(), imuData.accY.value(), imuData.accZ.value(), imuData.gyroX.value(), imuData.gyroY.value(), imuData.gyroZ.value());
+    }
+}
 
+ImuData gravitationImuData[3] = {
+    {0, -4096, 0, 0, 0, 0},
+    {0, -4096, 0, 0, 0, 0},
+    {0, -4096, 0, 0, 0, 0}
+};
 SwitchControlLibrary::SwitchControlLibrary() : switchReport{}, lastSwitchReport{} {
     resetAll();
     running = true;
@@ -107,7 +116,10 @@ void SwitchControlLibrary::loop(){
 
         }
         sendReport();
-        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+        printIMU(1, switchReport.imuData[0]);
+        printIMU(2, switchReport.imuData[1]);
+        printIMU(3, switchReport.imuData[2]);
+        std::this_thread::sleep_for(std::chrono::milliseconds(15));
     }
 }
 
@@ -155,6 +167,10 @@ void SwitchControlLibrary::resetAll() {
 void SwitchControlLibrary::pressButton(const ButtonType button) {
     std::lock_guard lock(reportMtx);
 
+    if (button == BUTTON_NONE) {
+        return;
+    }
+
     auto* ptr = reinterpret_cast<uint8_t*>(&switchReport);
     const int byteIdx = button / 8;
     const int bitOffset = button % 8;
@@ -164,6 +180,10 @@ void SwitchControlLibrary::pressButton(const ButtonType button) {
 
 void SwitchControlLibrary::releaseButton(const ButtonType button) {
     std::lock_guard lock(reportMtx);
+
+    if (button == BUTTON_NONE) {
+        return;
+    }
 
     auto* ptr = reinterpret_cast<uint8_t*>(&switchReport);
     const int byteIdx = button / 8;
@@ -175,10 +195,6 @@ void SwitchControlLibrary::setIMU(const int16_t accX, const int16_t accY, const 
     std::lock_guard lock(resetImuMtx);
     setIMUCore(accX, accY, accZ, gyroX, gyroY, gyroZ);
     resetImuStatus = false;
-}
-
-void printIMU(const int idx, const ImuData imuData) {
-    // printf("[%d]：%d,%d,%d,%d,%d,%d\n", idx, imuData.accX, imuData.accY, imuData.accZ, imuData.gyroX, imuData.gyroY, imuData.gyroZ);
 }
 
 void SwitchControlLibrary::setIMUCore(const int16_t accX, const int16_t accY, const int16_t accZ, const int16_t gyroX, const int16_t gyroY, const int16_t gyroZ) {
@@ -201,9 +217,32 @@ void SwitchControlLibrary::setIMUCore(const int16_t accX, const int16_t accY, co
     switchReport.imuData[2].gyroX = gyroX;
     switchReport.imuData[2].gyroY = gyroY;
     switchReport.imuData[2].gyroZ = gyroZ;
-    printIMU(1, switchReport.imuData[0]);
-    printIMU(2, switchReport.imuData[1]);
-    printIMU(3, switchReport.imuData[2]);
+
+
+    // switchReport.imuData[0].accX = 26;
+    // switchReport.imuData[0].accY = -828;
+    // switchReport.imuData[0].accZ = -4131;
+    // switchReport.imuData[0].gyroX = -44;
+    // switchReport.imuData[0].gyroY = -36;
+    // switchReport.imuData[0].gyroZ = -1;
+    //
+    // switchReport.imuData[1].accX = 13;
+    // switchReport.imuData[1].accY = -813;
+    // switchReport.imuData[1].accZ = -4138;
+    // switchReport.imuData[1].gyroX = -41;
+    // switchReport.imuData[1].gyroY = -33;
+    // switchReport.imuData[1].gyroZ = -9;
+    //
+    // switchReport.imuData[2].accX = 13;
+    // switchReport.imuData[2].accY = -813;
+    // switchReport.imuData[2].accZ = -4138;
+    // switchReport.imuData[2].gyroX = -41;
+    // switchReport.imuData[2].gyroY = -33;
+    // switchReport.imuData[2].gyroZ = -9;
+    // printIMU(1, switchReport.imuData[0]);
+    // printIMU(2, switchReport.imuData[1]);
+    // printIMU(3, switchReport.imuData[2]);
+
 }
 
 void SwitchControlLibrary::resetIMU() {

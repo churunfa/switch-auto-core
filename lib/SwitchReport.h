@@ -5,6 +5,7 @@
 #ifndef CONTROLLER_SWITCH_REPORT_H
 #define CONTROLLER_SWITCH_REPORT_H
 #include <cstdint>
+#include <boost/endian/arithmetic.hpp>
 
 typedef struct __attribute((packed, aligned(1)))
 {
@@ -45,12 +46,12 @@ typedef struct __attribute((packed, aligned(1))){
 
 
 typedef struct __attribute((packed, aligned(1))){
-    int16_t accX;
-    int16_t accY;
-    int16_t accZ;
-    int16_t gyroX;
-    int16_t gyroY;
-    int16_t gyroZ;
+    boost::endian::little_int16_t accX;
+    boost::endian::little_int16_t accY;
+    boost::endian::little_int16_t accZ;
+    boost::endian::little_int16_t gyroX;
+    boost::endian::little_int16_t gyroY;
+    boost::endian::little_int16_t gyroZ;
 } ImuData;
 
 typedef struct __attribute((packed, aligned(1))) {
