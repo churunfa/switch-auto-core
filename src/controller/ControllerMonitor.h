@@ -1,7 +1,6 @@
 #ifndef SWITCH_AUTO_CORE_CONTROLLERMONITOR_H
 #define SWITCH_AUTO_CORE_CONTROLLERMONITOR_H
 
-// SDL3 头文件
 #include <SDL3/SDL.h>
 #include <iostream>
 #include <thread>
@@ -9,8 +8,6 @@
 #include <string>
 #include <map>
 
-// [新增] 引入 Fusion 头文件 (请确保 CMakeLists.txt 已配置正确路径)
-#include "Fusion/Fusion.h"
 
 class GamepadStatus {
 public:
@@ -29,7 +26,7 @@ public:
         leftStickY = 0;
         rightStickX = 0;
         rightStickY = 0;
-        imuData = {0, 0, -4096, 0, 0, 0};
+        imuData = {0, 0, 4096, 0, 0, 0};
     }
 
     void send() const {
@@ -44,6 +41,7 @@ public:
         SwitchControlLibrary::getInstance().moveLeftAnalog(leftStickX, leftStickY);
         SwitchControlLibrary::getInstance().moveRightAnalog(rightStickX, rightStickY);
         SwitchControlLibrary::getInstance().setIMU(imuData.accX, imuData.accY, imuData.accZ, imuData.gyroX, imuData.gyroY, imuData.gyroZ);
+        SwitchControlLibrary::getInstance().sendReport();
     }
 };
 
@@ -57,11 +55,6 @@ public:
     void start() {
         if (isRunning) return;
 
-        std::cout << "=== Switch Pro Native Monitor (SDL3 + Fusion) ===" << std::endl;
-        std::cout << "1. 摇杆映射: 笛卡尔 [-2047, 2047]" << std::endl;
-        std::cout << "2. 支持运行中插拔手柄" << std::endl;
-        std::cout << "3. 安全机制: 断连自动复位 & 状态自动同步" << std::endl;
-        std::cout << "4. IMU增强: 自动零点漂移校准" << std::endl;
         std::cout << ">>> 正在后台等待设备..." << std::endl;
 
         isRunning = true;
@@ -96,8 +89,6 @@ private:
     const float SWITCH_GYRO_MAX_DPS = 2000.0f;
     const float SWITCH_GYRO_MAX_VAL = 32767.0f;
 
-    // [新增] Fusion 算法相关
-    FusionOffset offset{};
     const unsigned int SAMPLE_RATE = 200; // Switch 手柄通常回报率为 200Hz
 
     ControllerMonitor() {
@@ -109,8 +100,6 @@ private:
         SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_SWITCH, "1");
         SDL_SetHint("SDL_GAMEPAD_USE_BUTTON_LABELS", "0");
 
-        // [新增] 初始化 Fusion 偏移校准器
-        FusionOffsetInitialise(&offset, SAMPLE_RATE);
     }
 
     ~ControllerMonitor() {
@@ -271,7 +260,6 @@ private:
 
     static int16_t deadSpace(const int16_t x) {
         // return x;
-        // [调整] 有了 Fusion 后，这里的死区是为了消除像素级微颤，建议保留但可以适当调小
         return (std::abs(x) < 50) ? 0 : x;
     }
 
@@ -285,36 +273,12 @@ private:
             constexpr float GRAVITY = 9.80665f;
             const float scale = SWITCH_ACCEL_1G_RAW / GRAVITY;
 
-            // if (last_cnt > 0) {
-            //     std::cout << "\033["<<last_cnt+1<<"A\033[K" << std::endl;
-            // }
-            // printf("accelX=%f\n", sensor.data[0]);
-            // printf("accelY=%f\n", sensor.data[1]);
-            // printf("accelZ=%f\n\n", sensor.data[2]);
-            // last_cnt = 3;
-
             // 保持原有的坐标映射逻辑
             gamepad_status.imuData.accX = static_cast<int16_t>(-sensor.data[2] * scale);
             gamepad_status.imuData.accY = static_cast<int16_t>(-sensor.data[0] * scale);
             gamepad_status.imuData.accZ = static_cast<int16_t>(sensor.data[1] * scale);
 
         } else if (sensor.sensor == SDL_SENSOR_GYRO) {
-            // [修改] Fusion 集成逻辑
-            // if (last_cnt == 0) return;
-            // if (last_cnt > 3) {
-            //     std::cout << "\033[3A\033[K" << std::endl;
-            // }
-            // printf("gyroX=%f\n", sensor.data[0]);
-            // printf("gyroY=%f\n", sensor.data[1]);
-            // printf("gyroZ=%f\n", sensor.data[2]);
-            // last_cnt = 6;
-
-            // 1. 将 SDL 数据转入 Fusion 向量 (Fusion 使用标准单位 rad/s)
-            // FusionVector gyro_si = { sensor.data[0], sensor.data[1], sensor.data[2] };
-
-            // 2. [核心] 自动偏移校准：手柄静止时会自动学习并扣除偏差
-            // gyro_si = FusionOffsetUpdate(&offset, gyro_si);
-
             // 3. 转换回 Switch 的 Raw 单位
             // 系数 = (180 / PI) * (32767 / 2000)
             const float combinedScale = 57.29578f * (SWITCH_GYRO_MAX_VAL / SWITCH_GYRO_MAX_DPS);
@@ -344,10 +308,7 @@ private:
             SDL_SetGamepadSensorEnabled(controller, SDL_SENSOR_ACCEL, true);
             SDL_SetGamepadSensorEnabled(controller, SDL_SENSOR_GYRO, true);
 
-            // [新增] 连接新设备时，重置校准状态，防止继承上一个设备的偏差
-            FusionOffsetInitialise(&offset, SAMPLE_RATE);
-
-            for(int i=0; i<SDL_GAMEPAD_BUTTON_COUNT; ++i) buttonStates[i] = false;
+            for(bool & buttonState : buttonStates) buttonState = false;
         }
     }
 };

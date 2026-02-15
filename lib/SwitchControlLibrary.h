@@ -56,10 +56,14 @@ public:
     void resetRightAnalog();
     // 体感角速度和加速度
     void setIMU(int16_t accX, int16_t accY, int16_t accZ, int16_t gyroX, int16_t gyroY, int16_t gyroZ);
+    void setIMU(int index, ImuData imu_data);
+    void setIMU(const ImuData *imu_datas);
     void resetIMU();
     void resetAll();
     void sendReport();
     void delayTest();
+    void serialRead() const;
+
     static SwitchControlLibrary& getInstance();
 
     // 禁止拷贝
@@ -74,7 +78,6 @@ private:
     std::thread worker;
     std::recursive_mutex reportMtx;
     std::atomic<bool> running{false};
-    std::atomic<bool> resetImuStatus{false};
     std::recursive_mutex resetImuMtx;
     uint8_t header[2]={0xAA, 0x55};
     std::vector<uint8_t> buffer;

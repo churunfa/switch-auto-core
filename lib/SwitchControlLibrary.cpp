@@ -13,16 +13,10 @@ long long getCurrentTime() {
 
 }
 
-void printIMU(const int idx, const ImuData imuData) {
-    if (imuData.gyroX != 0 || imuData.gyroY != 0 || imuData.gyroZ != 0) {
-        // printf("[%d][%lld]：%d,%d,%d,%d,%d,%d\n", idx, getCurrentTime(), imuData.accX.value(), imuData.accY.value(), imuData.accZ.value(), imuData.gyroX.value(), imuData.gyroY.value(), imuData.gyroZ.value());
-    }
-}
-
 ImuData gravitationImuData[3] = {
-    {0, -4096, 0, 0, 0, 0},
-    {0, -4096, 0, 0, 0, 0},
-    {0, -4096, 0, 0, 0, 0}
+    {0, 4096, 0, 0, 0, 0},
+    {0, 4096, 0, 0, 0, 0},
+    {0, 4096, 0, 0, 0, 0}
 };
 SwitchControlLibrary::SwitchControlLibrary() : switchReport{}, lastSwitchReport{} {
     resetAll();
@@ -89,8 +83,6 @@ void SwitchControlLibrary::cleanup() {
         std::memset(&switchReport, 0, sizeof(SwitchProReport));
         std::memset(&lastSwitchReport, 0, sizeof(SwitchProReport));
     }
-
-    // 如果有其他相关的互斥锁或条件变量，也在这里进行重置
 }
 
 
@@ -106,19 +98,8 @@ void SwitchControlLibrary::loop(){
             std::this_thread::sleep_for(std::chrono::seconds(1));
             continue;
         }
-        if (resetImuStatus) {
-            std::lock_guard lock(resetImuMtx);
-            setIMUCore(0, 0, -4096, 0, 0, 0);
-            if (memcmp(switchReport.imuData, gravitationImuData, sizeof(ImuData) * 3) == 0) {
-                // 三组Imu全部重置完成
-                resetImuStatus = false;
-            }
-
-        }
         sendReport();
-        printIMU(1, switchReport.imuData[0]);
-        printIMU(2, switchReport.imuData[1]);
-        printIMU(3, switchReport.imuData[2]);
+        serialRead();
         std::this_thread::sleep_for(std::chrono::milliseconds(15));
     }
 }
@@ -194,7 +175,23 @@ void SwitchControlLibrary::releaseButton(const ButtonType button) {
 void SwitchControlLibrary::setIMU(const int16_t accX, const int16_t accY, const int16_t accZ, const int16_t gyroX, const int16_t gyroY, const int16_t gyroZ) {
     std::lock_guard lock(resetImuMtx);
     setIMUCore(accX, accY, accZ, gyroX, gyroY, gyroZ);
-    resetImuStatus = false;
+}
+
+void SwitchControlLibrary::setIMU(const int index, const ImuData imu_data) {
+    std::lock_guard lock(resetImuMtx);
+    switchReport.imuData[index].accX = imu_data.accX;
+    switchReport.imuData[index].accY = imu_data.accY;
+    switchReport.imuData[index].accZ = imu_data.accZ;
+    switchReport.imuData[index].gyroX = imu_data.gyroX;
+    switchReport.imuData[index].gyroY = imu_data.gyroY;
+    switchReport.imuData[index].gyroZ = imu_data.gyroZ;
+}
+
+void SwitchControlLibrary::setIMU(const ImuData *imu_datas) {
+    std::lock_guard lock(resetImuMtx);
+    for (int i = 0; i < 3; i++) {
+        setIMU(i, imu_datas[i]);
+    }
 }
 
 void SwitchControlLibrary::setIMUCore(const int16_t accX, const int16_t accY, const int16_t accZ, const int16_t gyroX, const int16_t gyroY, const int16_t gyroZ) {
@@ -218,37 +215,11 @@ void SwitchControlLibrary::setIMUCore(const int16_t accX, const int16_t accY, co
     switchReport.imuData[2].gyroY = gyroY;
     switchReport.imuData[2].gyroZ = gyroZ;
 
-
-    // switchReport.imuData[0].accX = 26;
-    // switchReport.imuData[0].accY = -828;
-    // switchReport.imuData[0].accZ = -4131;
-    // switchReport.imuData[0].gyroX = -44;
-    // switchReport.imuData[0].gyroY = -36;
-    // switchReport.imuData[0].gyroZ = -1;
-    //
-    // switchReport.imuData[1].accX = 13;
-    // switchReport.imuData[1].accY = -813;
-    // switchReport.imuData[1].accZ = -4138;
-    // switchReport.imuData[1].gyroX = -41;
-    // switchReport.imuData[1].gyroY = -33;
-    // switchReport.imuData[1].gyroZ = -9;
-    //
-    // switchReport.imuData[2].accX = 13;
-    // switchReport.imuData[2].accY = -813;
-    // switchReport.imuData[2].accZ = -4138;
-    // switchReport.imuData[2].gyroX = -41;
-    // switchReport.imuData[2].gyroY = -33;
-    // switchReport.imuData[2].gyroZ = -9;
-    // printIMU(1, switchReport.imuData[0]);
-    // printIMU(2, switchReport.imuData[1]);
-    // printIMU(3, switchReport.imuData[2]);
-
 }
 
 void SwitchControlLibrary::resetIMU() {
     std::lock_guard lock(resetImuMtx);
-    setIMUCore(0, 0, -4096, 0, 0, 0);
-    resetImuStatus = true;
+    setIMU(gravitationImuData);
 }
 
 void SwitchControlLibrary::setAnalogX(SwitchAnalog& stick, const uint16_t x) {
@@ -320,6 +291,30 @@ void SwitchControlLibrary::delayTest() {
     }
     const long long sendTime = getCurrentTime();
     std::cout<<"消息处理耗时:" << sendFinishedTime - startTime <<",消息发送耗时"<<(sendTime - startTime)/2<<std::endl;
+}
+char temp_buf[1008611];
+std::string line_buffer;
+void SwitchControlLibrary::serialRead() const {
+    if (const int bytes_read = sp_blocking_read(port, temp_buf, sizeof(temp_buf), 3); bytes_read > 0) {
+        // 将新收到的数据追加到缓存字符串末尾
+        line_buffer.append(temp_buf, bytes_read);
+
+        // 查找缓存中是否有换行符
+        size_t pos = 0;
+        while ((pos = line_buffer.find('\n')) != std::string::npos) {
+            // 提取完整的一行（包含 \n）
+            std::string distinct_line = line_buffer.substr(0, pos + 1);
+
+            // --- 在这里处理完整的日志行 ---
+            // 因为是完整的一行，UTF-8 汉字通常是完整的
+            std::cout<<"接收到数据:"<<distinct_line;
+            // printf("接收到数据：%s", distinct_line.c_str());
+            // ---------------------------
+
+            // 从缓存中移除已处理的行
+            line_buffer.erase(0, pos + 1);
+        }
+    }
 }
 
 SwitchControlLibrary& SwitchControlLibrary::getInstance() {

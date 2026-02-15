@@ -92,6 +92,7 @@ set(ALL_SOURCES
         ${EXEC_SOURCES}
         ${SERVICE_SOURCES}
         ${LIB_SOURCES}
+        src/controller/IMUPublisher.h
 )
 
 add_executable(switch_auto_core ${ALL_SOURCES})
@@ -103,8 +104,7 @@ target_include_directories(switch_auto_core PRIVATE
         ${CMAKE_CURRENT_BINARY_DIR}
         src
         lib
-        Fusion                      # 允许直接包含 "Fusion.h" (虽然 Fusion 官方推荐下一行的写法)
-        ${CMAKE_CURRENT_SOURCE_DIR} # [重要] 允许 #include "Fusion/Fusion.h" 这种写法
+        ${CMAKE_CURRENT_SOURCE_DIR}
         ${GEN_CPP_PATH}
         ${GEN_GRPC_PATH}
         ${bs_thread_pool_SOURCE_DIR}/include
