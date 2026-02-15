@@ -14,9 +14,12 @@ public:
     std::map<ButtonType, bool> inputs = {};
     int leftStickX = 0;
     int leftStickY = 0;
+    bool sendLeftStick = false;
     int rightStickX = 0;
     int rightStickY = 0;
+    bool sendRightStick = false;
     ImuData imuData = {};
+    bool sendImuData = false;
     GamepadStatus() {
         reset();
     }
@@ -29,7 +32,7 @@ public:
         imuData = {0, 0, 4096, 0, 0, 0};
     }
 
-    void send() const {
+    void send() {
         for (auto [fst, snd] : inputs) {
             const auto btn = fst;
             if (snd) {
@@ -38,9 +41,18 @@ public:
                 SwitchControlLibrary::getInstance().releaseButton(btn);
             }
         }
-        SwitchControlLibrary::getInstance().moveLeftAnalog(leftStickX, leftStickY);
-        SwitchControlLibrary::getInstance().moveRightAnalog(rightStickX, rightStickY);
-        SwitchControlLibrary::getInstance().setIMU(imuData.accX, imuData.accY, imuData.accZ, imuData.gyroX, imuData.gyroY, imuData.gyroZ);
+        if (sendLeftStick) {
+            SwitchControlLibrary::getInstance().moveLeftAnalog(leftStickX, leftStickY);
+            sendLeftStick = false;
+        }
+        if (sendRightStick) {
+            SwitchControlLibrary::getInstance().moveRightAnalog(rightStickX, rightStickY);
+            sendRightStick = false;
+        }
+        if (sendImuData) {
+            SwitchControlLibrary::getInstance().setIMU(imuData.accX, imuData.accY, imuData.accZ, imuData.gyroX, imuData.gyroY, imuData.gyroZ);
+            sendImuData = false;
+        }
         SwitchControlLibrary::getInstance().sendReport();
     }
 };
@@ -248,12 +260,36 @@ private:
         float ratio = static_cast<float>(axis.value) / SDL_JOYSTICK_MAX;
         if (ratio > 1.0f) ratio = 1.0f;
         if (ratio < -1.0f) ratio = -1.0f;
-
+        const int newStick = static_cast<int>(ratio * JOYSTICK_TARGET_MAX);
         switch (axis.axis) {
-            case SDL_GAMEPAD_AXIS_LEFTX: gamepad_status.leftStickX = static_cast<int>(ratio * JOYSTICK_TARGET_MAX); break;
-            case SDL_GAMEPAD_AXIS_RIGHTX: gamepad_status.rightStickX = static_cast<int>(ratio * JOYSTICK_TARGET_MAX); break;
-            case SDL_GAMEPAD_AXIS_LEFTY: gamepad_status.leftStickY = -static_cast<int>(ratio * JOYSTICK_TARGET_MAX); break;
-            case SDL_GAMEPAD_AXIS_RIGHTY: gamepad_status.rightStickY = -static_cast<int>(ratio * JOYSTICK_TARGET_MAX); break;
+            case SDL_GAMEPAD_AXIS_LEFTX: {
+                if (abs(newStick - gamepad_status.leftStickX) > 128) {
+                    gamepad_status.leftStickX = newStick;
+                    gamepad_status.sendLeftStick = true;
+                }
+                break;
+            }
+            case SDL_GAMEPAD_AXIS_RIGHTX: {
+                if (abs(newStick - gamepad_status.rightStickX) > 128) {
+                    gamepad_status.rightStickX = newStick;
+                    gamepad_status.sendRightStick = true;
+                }
+                break;
+            }
+            case SDL_GAMEPAD_AXIS_LEFTY: {
+                if (abs(newStick - gamepad_status.leftStickY) > 128) {
+                    gamepad_status.leftStickY = -newStick;
+                    gamepad_status.sendLeftStick = true;
+                }
+                break;
+            }
+            case SDL_GAMEPAD_AXIS_RIGHTY: {
+                if (abs(newStick - gamepad_status.rightStickY) > 128) {
+                    gamepad_status.rightStickY = -newStick;
+                    gamepad_status.sendRightStick = true;
+                }
+                break;
+            }
             default: ;
         }
     }
@@ -273,25 +309,44 @@ private:
             constexpr float GRAVITY = 9.80665f;
             const float scale = SWITCH_ACCEL_1G_RAW / GRAVITY;
 
-            // 保持原有的坐标映射逻辑
-            gamepad_status.imuData.accX = static_cast<int16_t>(-sensor.data[2] * scale);
-            gamepad_status.imuData.accY = static_cast<int16_t>(-sensor.data[0] * scale);
-            gamepad_status.imuData.accZ = static_cast<int16_t>(sensor.data[1] * scale);
+            const boost::endian::little_int16_t newAccX = static_cast<int16_t>(-sensor.data[2] * scale);
+            const boost::endian::little_int16_t newAccY = static_cast<int16_t>(-sensor.data[0] * scale);
+            const boost::endian::little_int16_t newAccZ = static_cast<int16_t>(sensor.data[1] * scale);
+
+            if (abs(newAccX.value() - gamepad_status.imuData.accX.value()) > 50) {
+                gamepad_status.imuData.accX = newAccX;
+                gamepad_status.sendImuData = true;
+            }
+            if (abs(newAccY.value() - gamepad_status.imuData.accY.value()) > 50) {
+                gamepad_status.imuData.accY = newAccY;
+                gamepad_status.sendImuData = true;
+            }
+            if (abs(newAccZ.value() - gamepad_status.imuData.accZ.value()) > 50) {
+                gamepad_status.imuData.accZ = newAccZ;
+                gamepad_status.sendImuData = true;
+            }
 
         } else if (sensor.sensor == SDL_SENSOR_GYRO) {
             // 3. 转换回 Switch 的 Raw 单位
             // 系数 = (180 / PI) * (32767 / 2000)
             const float combinedScale = 57.29578f * (SWITCH_GYRO_MAX_VAL / SWITCH_GYRO_MAX_DPS);
 
-            // 4. 应用转换和原有的坐标映射逻辑 (-X, Z, -Y)
-            // 注意：gyro_si.axis.x/y/z 对应 SDL 的 0/1/2 索引
-            const auto rawX = static_cast<int16_t>(-sensor.data[2] * combinedScale);
-            const auto rawY = static_cast<int16_t>(-sensor.data[0] * combinedScale);
-            const auto rawZ = static_cast<int16_t>(sensor.data[1] * combinedScale);
+            const auto rawX = deadSpace(static_cast<int16_t>(-sensor.data[2] * combinedScale));
+            const auto rawY = deadSpace(static_cast<int16_t>(-sensor.data[0] * combinedScale));
+            const auto rawZ = deadSpace(static_cast<int16_t>(sensor.data[1] * combinedScale));
 
-            gamepad_status.imuData.gyroX = deadSpace(rawX);
-            gamepad_status.imuData.gyroY = deadSpace(rawY);
-            gamepad_status.imuData.gyroZ = deadSpace(rawZ);
+            if (abs(rawX - gamepad_status.imuData.gyroX.value()) > 50) {
+                gamepad_status.imuData.gyroX = rawX;
+                gamepad_status.sendImuData = true;
+            }
+            if (abs(rawY - gamepad_status.imuData.gyroY.value()) > 50) {
+                gamepad_status.imuData.gyroY = rawY;
+                gamepad_status.sendImuData = true;
+            }
+            if (abs(rawZ - gamepad_status.imuData.gyroZ.value()) > 50) {
+                gamepad_status.imuData.gyroZ = rawZ;
+                gamepad_status.sendImuData = true;
+            }
         }
     }
 
