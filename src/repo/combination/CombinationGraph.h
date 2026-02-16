@@ -52,8 +52,7 @@ class TopoSession : public std::enable_shared_from_this<TopoSession> {
     std::unordered_map<int, int> in_degrees;
 
     inline static std::recursive_mutex async_running_mtx;
-    inline static std::thread worker;
-    inline static std::atomic<bool> async_running{false};
+    inline static std::jthread worker;
     inline static std::atomic<int> running_graph_id{0};
     inline static std::atomic<long long> async_start_time{0};
     inline static std::atomic<long long> async_exec_cnt{0};
@@ -64,6 +63,7 @@ class TopoSession : public std::enable_shared_from_this<TopoSession> {
     static asio::awaitable<void> runNode(CombinationNode node);
     static void check_async_running();
 public:
+    inline static std::atomic<bool> async_running{false};
     TopoSession(asio::io_context& c, const CombinationGraph& g);
     static void exec(const CombinationGraph &graph, bool async=false, int async_exec_count = -1);
     static void asyncExec(int graph_id, int async_exec_count = -1);

@@ -34,6 +34,13 @@ public:
         imuData = {0, 0, 4096, 0, 0, 0};
     }
 
+    void clearInput() {
+        if (const auto function_button = ButtonBindingCache::getInstance().getFunctionButton(); inputs[function_button]) {
+            return;
+        }
+        inputs.clear();
+    }
+
     void send() {
         bool func_run = false;
         const auto function_button = ButtonBindingCache::getInstance().getFunctionButton();
@@ -53,34 +60,38 @@ public:
                 }
             }
         } else {
-            bool original_func_press = false;
-            int execGraphId = -1;
-            for (auto [fst, snd] : inputs) {
-                if (fst == function_button) {
+        bool original_func_press = false;
+        int execGraphId = -1;
+        for (auto [fst, snd] : inputs) {
+            if (fst == function_button) {
+                continue;
+            }
+            if (snd) {
+                // 函数按键，未配置的按照功能按键原始功能处理
+                const int graph_id = ButtonBindingCache::getInstance().getGraphId(fst);
+                if (graph_id == -1) {
+                    original_func_press = true;
                     continue;
                 }
-                if (snd) {
-                    // 函数按键，未配置的按照功能按键原始功能处理
-                    const int graph_id = ButtonBindingCache::getInstance().getGraphId(fst);
-                    if (graph_id == -1) {
-                        original_func_press = true;
-                        continue;
-                    }
-                    if (CombinationGraphCache::getInstance().findCombinationGraphById(graph_id)) {
-                        execGraphId = graph_id;
-                    }
+                if (CombinationGraphCache::getInstance().findCombinationGraphById(graph_id)) {
+                    execGraphId = graph_id;
                 }
             }
-            // 处理功能按键
-            if (original_func_press) {
-                SwitchControlLibrary::getInstance().pressButton(function_button);
-            } else {
-                SwitchControlLibrary::getInstance().releaseButton(function_button);
-            }
-            if (execGraphId != -1) {
-                // 执行拓扑图
+        }
+        // 处理功能按键
+        if (original_func_press) {
+            SwitchControlLibrary::getInstance().pressButton(function_button);
+        } else {
+            SwitchControlLibrary::getInstance().releaseButton(function_button);
+        }
+        if (execGraphId != -1 && !TopoSession::async_running) {
+            // 执行拓扑图
+            try {
                 TopoSession::asyncExec(execGraphId, 1);
+            } catch (const std::exception& e) {
+                std::cerr << "Error: " << e.what() << std::endl;
             }
+        }
         }
 
         if (sendLeftStick) {
@@ -169,6 +180,7 @@ private:
 
         while (isRunning) {
             // 1. 处理事件
+            gamepad_status.clearInput();
             while (SDL_PollEvent(&event)) {
                 handleEvent(event);
             }
@@ -285,28 +297,28 @@ private:
         const int newStick = static_cast<int>(ratio * JOYSTICK_TARGET_MAX);
         switch (axis.axis) {
             case SDL_GAMEPAD_AXIS_LEFTX: {
-                if (abs(newStick - gamepad_status.leftStickX) > 64) {
+                if (abs(newStick - gamepad_status.leftStickX) > 128) {
                     gamepad_status.leftStickX = newStick;
                     gamepad_status.sendLeftStick = true;
                 }
                 break;
             }
             case SDL_GAMEPAD_AXIS_RIGHTX: {
-                if (abs(newStick - gamepad_status.rightStickX) > 64) {
+                if (abs(newStick - gamepad_status.rightStickX) > 128) {
                     gamepad_status.rightStickX = newStick;
                     gamepad_status.sendRightStick = true;
                 }
                 break;
             }
             case SDL_GAMEPAD_AXIS_LEFTY: {
-                if (abs(newStick - gamepad_status.leftStickY) > 64) {
+                if (abs(newStick - gamepad_status.leftStickY) > 128) {
                     gamepad_status.leftStickY = -newStick;
                     gamepad_status.sendLeftStick = true;
                 }
                 break;
             }
             case SDL_GAMEPAD_AXIS_RIGHTY: {
-                if (abs(newStick - gamepad_status.rightStickY) > 64) {
+                if (abs(newStick - gamepad_status.rightStickY) > 128) {
                     gamepad_status.rightStickY = -newStick;
                     gamepad_status.sendRightStick = true;
                 }

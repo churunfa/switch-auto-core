@@ -297,7 +297,6 @@ void TopoSession::exec(const CombinationGraph &graph, const bool async, const in
         ++async_exec_cnt;
     }
 
-
     try {
         asio::io_context ctx;
         const auto session = std::make_shared<TopoSession>(ctx, graph);
@@ -310,6 +309,8 @@ void TopoSession::exec(const CombinationGraph &graph, const bool async, const in
                 ctx.restart();
                 session->run();
                 ctx.run();
+            } else {
+                async_running = false;
             }
         }
     } catch (std::exception& e) {
@@ -333,7 +334,7 @@ void TopoSession::asyncExec(const int graph_id, const int async_exec_count) {
     async_start_time = std::chrono::time_point_cast<std::chrono::milliseconds>(now).time_since_epoch().count();
     running_graph_id = graph_id;
     async_exec_cnt = 0;
-    worker = std::thread(&TopoSession::exec, *combination_graph, true, async_exec_count);
+    worker = std::jthread(&TopoSession::exec, *combination_graph, true, async_exec_count);
 }
 
 void TopoSession::stopAsyncExec() {
