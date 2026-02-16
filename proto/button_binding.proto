@@ -9,6 +9,63 @@ option java_multiple_files = true;
 option java_package = "com.github.churunfa.switchautoweb.base.button";
 option java_outer_classname = "ButtonBindingProto";
 
+// SDL Gamepad 按钮枚举
+enum SdlButton {
+  SDL_BUTTON_SOUTH = 0;  // A键
+  SDL_BUTTON_EAST = 1;   // B键
+  SDL_BUTTON_WEST = 2;   // X键
+  SDL_BUTTON_NORTH = 3;  // Y键
+  SDL_BUTTON_LEFT_SHOULDER = 4;   // L键
+  SDL_BUTTON_RIGHT_SHOULDER = 5;  // R键
+  SDL_BUTTON_LEFT_TRIGGER = 6;    // ZL键(触发)
+  SDL_BUTTON_RIGHT_TRIGGER = 7;   // ZR键(触发)
+  SDL_BUTTON_BACK = 8;    // 减号键(-)
+  SDL_BUTTON_START = 9;   // 加号键(+)
+  SDL_BUTTON_LEFT_STICK = 10;   // 左摇杆按下
+  SDL_BUTTON_RIGHT_STICK = 11;  // 右摇杆按下
+  SDL_BUTTON_GUIDE = 12;  // Home键
+  SDL_BUTTON_MISC1 = 13;  // 截图键
+  SDL_BUTTON_DPAD_UP = 14;    // 上方向键
+  SDL_BUTTON_DPAD_DOWN = 15;  // 下方向键
+  SDL_BUTTON_DPAD_LEFT = 16;  // 左方向键
+  SDL_BUTTON_DPAD_RIGHT = 17; // 右方向键
+  SDL_BUTTON_RIGHT_PADDLE1 = 18; // 右侧拨片1
+  SDL_BUTTON_RIGHT_PADDLE2 = 19; // 右侧拨片2
+  SDL_BUTTON_LEFT_PADDLE1 = 20;  // 左侧拨片1
+  SDL_BUTTON_LEFT_PADDLE2 = 21;  // 左侧拨片2
+  SDL_BUTTON_TOUCHPAD = 22;      // 触摸板
+  SDL_BUTTON_INVALID = 23;       // 无效按钮
+}
+
+// Switch 按钮类型枚举
+enum SwitchButtonType {
+  SWITCH_BUTTON_TYPE_Y = 0;
+  SWITCH_BUTTON_TYPE_X = 1;
+  SWITCH_BUTTON_TYPE_B = 2;
+  SWITCH_BUTTON_TYPE_A = 3;
+  SWITCH_BUTTON_TYPE_SR = 4;
+  SWITCH_BUTTON_TYPE_SL = 5;
+  SWITCH_BUTTON_TYPE_R = 6;
+  SWITCH_BUTTON_TYPE_ZR = 7;
+  SWITCH_BUTTON_TYPE_MINUS = 8;     // 减号键
+  SWITCH_BUTTON_TYPE_PLUS = 9;      // 加号键
+  SWITCH_BUTTON_TYPE_THUMB_R = 10;  // 按下R键
+  SWITCH_BUTTON_TYPE_THUMB_L = 11;  // 按下L键
+  SWITCH_BUTTON_TYPE_HOME = 12;     // Home键
+  SWITCH_BUTTON_TYPE_CAPTURE = 13;  // 截图
+  SWITCH_BUTTON_TYPE_DUMMY = 14;           // 震动
+  SWITCH_BUTTON_TYPE_CHARGING_GRIP = 15;   // 充电握把
+  SWITCH_BUTTON_TYPE_DPAD_DOWN = 16;       // 下
+  SWITCH_BUTTON_TYPE_DPAD_UP = 17;         // 上
+  SWITCH_BUTTON_TYPE_DPAD_RIGHT = 18;      // 右
+  SWITCH_BUTTON_TYPE_DPAD_LEFT = 19;       // 左
+  SWITCH_BUTTON_TYPE_LEFT_SL = 20;  // joy-con的SL键
+  SWITCH_BUTTON_TYPE_LEFT_SR = 21;  // joy-con的SR键
+  SWITCH_BUTTON_TYPE_L = 22;
+  SWITCH_BUTTON_TYPE_ZL = 23;
+  SWITCH_BUTTON_TYPE_NONE = 24;     // 无按钮
+}
+
 service ButtonBindingService {
     rpc GetAllButtonBindings (google.protobuf.Empty) returns (GetAllButtonBindingsResponse) {}
     rpc UpdateButtonBinding (UpdateButtonBindingRequest) returns (base.SimpleResponse) {}
@@ -19,9 +76,9 @@ service ButtonBindingService {
 
 message ButtonBinding {
     int32 id = 1;
-    int32 sdl_btn = 2;
+    SdlButton sdl_btn = 2;
     string sdl_btn_name = 3;
-    int32 button_type = 4;
+    SwitchButtonType button_type = 4;
     string button_name = 5;
     bool function_key = 6;
     int32 graph_id = 7;
@@ -33,8 +90,8 @@ message GetAllButtonBindingsResponse {
 
 message UpdateButtonBindingRequest {
     int32 id = 1;
-    int32 sdl_btn = 2;
-    int32 button_type = 3;
+    SdlButton sdl_btn = 2;
+    SwitchButtonType button_type = 3;
 }
 
 message SetFunctionKeyRequest {
