@@ -263,28 +263,28 @@ private:
         const int newStick = static_cast<int>(ratio * JOYSTICK_TARGET_MAX);
         switch (axis.axis) {
             case SDL_GAMEPAD_AXIS_LEFTX: {
-                if (abs(newStick - gamepad_status.leftStickX) > 128) {
+                if (abs(newStick - gamepad_status.leftStickX) > 64) {
                     gamepad_status.leftStickX = newStick;
                     gamepad_status.sendLeftStick = true;
                 }
                 break;
             }
             case SDL_GAMEPAD_AXIS_RIGHTX: {
-                if (abs(newStick - gamepad_status.rightStickX) > 128) {
+                if (abs(newStick - gamepad_status.rightStickX) > 64) {
                     gamepad_status.rightStickX = newStick;
                     gamepad_status.sendRightStick = true;
                 }
                 break;
             }
             case SDL_GAMEPAD_AXIS_LEFTY: {
-                if (abs(newStick - gamepad_status.leftStickY) > 128) {
+                if (abs(newStick - gamepad_status.leftStickY) > 64) {
                     gamepad_status.leftStickY = -newStick;
                     gamepad_status.sendLeftStick = true;
                 }
                 break;
             }
             case SDL_GAMEPAD_AXIS_RIGHTY: {
-                if (abs(newStick - gamepad_status.rightStickY) > 128) {
+                if (abs(newStick - gamepad_status.rightStickY) > 64) {
                     gamepad_status.rightStickY = -newStick;
                     gamepad_status.sendRightStick = true;
                 }
