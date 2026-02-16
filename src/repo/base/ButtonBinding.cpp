@@ -22,12 +22,8 @@ bool ButtonBindingRepo::updateBinding(int id, int sdl_btn, int button_type) {
     }
     
     auto binding = *binding_ptr;
-    binding.sdl_btn = sdl_btn;
+
     binding.button_type = button_type;
-    
-    // 更新SDL按钮名称
-    const char* btn_name = SDL_GetGamepadStringForButton(static_cast<SDL_GamepadButton>(sdl_btn));
-    binding.sdl_btn_name = btn_name ? btn_name : "Unknown";
     
     // 更新Switch按钮名称
     switch (button_type) {
