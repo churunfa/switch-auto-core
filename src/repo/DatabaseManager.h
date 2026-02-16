@@ -9,6 +9,7 @@
 #include <string>
 #include <sqlite_orm/sqlite_orm.h>
 #include "base/BaseOperate.h"
+#include "base/ButtonBinding.h"
 #include "base/IdGenerate.h"
 #include "combination/Combination.h"
 
@@ -20,7 +21,8 @@ inline  auto createStorage(const std::string& path) {
         Combination::getDescription(),
         CombinationNode::getDescription(),
         CombinationEdge::getDescription(),
-        IdGenerate::getDescription()
+        IdGenerate::getDescription(),
+        ButtonBinding::getDescription()
     );
 }
 
@@ -32,6 +34,7 @@ class DatabaseManager {
         try {
             const auto _storage = createNewConnection();
             BaseOperate::initData(*_storage);
+            ButtonBinding::initData(*_storage);
             std::cout << "数据库已初始化并完成同步。" << std::endl;
         } catch (const std::exception& e) {
             std::cerr << "DATABASE FATAL ERROR: " << e.what() << std::endl;

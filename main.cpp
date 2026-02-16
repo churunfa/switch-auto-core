@@ -3,6 +3,7 @@
 #include <string>
 #include <grpcpp/grpcpp.h>
 #include "SwitchControlLibrary.h"
+#include "cache/CacheLoader.h"
 #include "controller/ControllerMonitor.h"
 #include "service/BaseOperateService.h"
 #include "service/CombinationGraphService.h"
@@ -28,6 +29,7 @@ void RunServer() {
 int main(int argc, char** argv) {
     DatabaseManager::getInstance();
     SwitchControlLibrary::getInstance();
+    CacheLoader::getInstance();
     ControllerMonitor::getInstance().start();
     RunServer();
     return 0;

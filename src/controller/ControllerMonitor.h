@@ -8,6 +8,8 @@
 #include <string>
 #include <map>
 
+#include "cache/ButtonBindingCache.h"
+#include "repo/combination/CombinationGraph.h"
 
 class GamepadStatus {
 public:
@@ -33,14 +35,54 @@ public:
     }
 
     void send() {
-        for (auto [fst, snd] : inputs) {
-            const auto btn = fst;
-            if (snd) {
-                SwitchControlLibrary::getInstance().pressButton(btn);
+        bool func_run = false;
+        const auto function_button = ButtonBindingCache::getInstance().getFunctionButton();
+        if (inputs[function_button]) {
+            func_run = true;
+        }
+        // 如果没有函数按键，则按功能按键
+        if (!func_run) {
+            for (auto [fst, snd] : inputs) {
+                if (fst != function_button) {
+                    const auto btn = fst;
+                    if (snd) {
+                        SwitchControlLibrary::getInstance().pressButton(btn);
+                    } else {
+                        SwitchControlLibrary::getInstance().releaseButton(btn);
+                    }
+                }
+            }
+        } else {
+            bool original_func_press = false;
+            int execGraphId = -1;
+            for (auto [fst, snd] : inputs) {
+                if (fst == function_button) {
+                    continue;
+                }
+                if (snd) {
+                    // 函数按键，未配置的按照功能按键原始功能处理
+                    const int graph_id = ButtonBindingCache::getInstance().getGraphId(fst);
+                    if (graph_id == -1) {
+                        original_func_press = true;
+                        continue;
+                    }
+                    if (CombinationGraphCache::getInstance().findCombinationGraphById(graph_id)) {
+                        execGraphId = graph_id;
+                    }
+                }
+            }
+            // 处理功能按键
+            if (original_func_press) {
+                SwitchControlLibrary::getInstance().pressButton(function_button);
             } else {
-                SwitchControlLibrary::getInstance().releaseButton(btn);
+                SwitchControlLibrary::getInstance().releaseButton(function_button);
+            }
+            if (execGraphId != -1) {
+                // 执行拓扑图
+                TopoSession::asyncExec(execGraphId, 1);
             }
         }
+
         if (sendLeftStick) {
             SwitchControlLibrary::getInstance().moveLeftAnalog(leftStickX, leftStickY);
             sendLeftStick = false;
@@ -127,7 +169,6 @@ private:
 
         while (isRunning) {
             // 1. 处理事件
-            gamepad_status.inputs.clear();
             while (SDL_PollEvent(&event)) {
                 handleEvent(event);
             }
@@ -198,26 +239,7 @@ private:
     }
 
     static ButtonType getButtonType(const SDL_GamepadButton button) {
-        switch (button) {
-            // ... (保持原有的按键映射逻辑不变) ...
-            case SDL_GAMEPAD_BUTTON_SOUTH: return BUTTON_B;
-            case SDL_GAMEPAD_BUTTON_EAST: return BUTTON_A;
-            case SDL_GAMEPAD_BUTTON_WEST: return BUTTON_Y;
-            case SDL_GAMEPAD_BUTTON_NORTH: return BUTTON_X;
-            case SDL_GAMEPAD_BUTTON_BACK: return BUTTON_MINUS;
-            case SDL_GAMEPAD_BUTTON_START: return BUTTON_PLUS;
-            case SDL_GAMEPAD_BUTTON_GUIDE: return BUTTON_HOME;
-            case SDL_GAMEPAD_BUTTON_MISC1: return BUTTON_CAPTURE;
-            case SDL_GAMEPAD_BUTTON_LEFT_STICK: return BUTTON_THUMB_L;
-            case SDL_GAMEPAD_BUTTON_RIGHT_STICK: return BUTTON_THUMB_R;
-            case SDL_GAMEPAD_BUTTON_LEFT_SHOULDER: return BUTTON_L;
-            case SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER: return BUTTON_R;
-            case SDL_GAMEPAD_BUTTON_DPAD_UP: return DPAD_UP;
-            case SDL_GAMEPAD_BUTTON_DPAD_DOWN: return DPAD_DOWN;
-            case SDL_GAMEPAD_BUTTON_DPAD_LEFT: return DPAD_LEFT;
-            case SDL_GAMEPAD_BUTTON_DPAD_RIGHT: return DPAD_RIGHT;
-            default: return BUTTON_NONE;
-        }
+        return ButtonBindingCache::getInstance().getButtonType(button);
     }
 
     void handleEvent(const SDL_Event& event) {

@@ -5,6 +5,7 @@
 #include "CombinationGraph.h"
 
 #include "combination_graph.pb.h"
+#include "cache/CombinationGraphCache.h"
 #include "exec/base/BaseOperationProcess.h"
 #include "exec/coroutine/CoroutineUtils.h"
 #include "repo/DatabaseManager.h"
@@ -155,7 +156,7 @@ std::vector<CombinationEdge> allCombinationEdge(const int combination_id) {
     return edges;
 }
 
-    std::optional<CombinationGraph> CombinationRepo::getGraphById(const int id) {
+std::optional<CombinationGraph> CombinationRepo::getGraphById(const int id) {
     const auto combination = db.get_pointer<Combination>(where(c(&Combination::id) == id));
     if (!combination) {
         return std::nullopt;
@@ -173,15 +174,6 @@ std::optional<CombinationGraph> CombinationRepo::getGraphByName(const std::strin
             c(&Combination::combination_name) == combination_name
         );
     return getGraphById(combination -> id);
-}
-
-CombinationGraph:: // 深拷贝构造函数
-    CombinationGraph(const CombinationGraph& other)
-        : combination(other.combination),
-          start_node(other.start_node),
-          node_map(other.node_map),
-          edge_map(other.edge_map),
-          out_edge(other.out_edge) {
 }
 
 
@@ -293,7 +285,7 @@ void TopoSession::check_async_running() {
     }
 }
 
-void TopoSession::exec(const CombinationGraph &graph, const bool async) {
+void TopoSession::exec(const CombinationGraph &graph, const bool async, const int async_exec_count) {
     if (!graph.getStartNode()) {
         throw std::runtime_error("拓扑图结构异常，不存在起始节点");
     }
@@ -313,20 +305,23 @@ void TopoSession::exec(const CombinationGraph &graph, const bool async) {
         ctx.run();
 
         while (async_running) {
-            ++async_exec_cnt;
-            ctx.restart();
-            session->run();
-            ctx.run();
+            if (async_exec_count == -1 || async_exec_cnt < async_exec_count) {
+                ++async_exec_cnt;
+                ctx.restart();
+                session->run();
+                ctx.run();
+            }
         }
     } catch (std::exception& e) {
         std::cerr << "拓扑图计算异常: " << e.what() << std::endl;
     }
 }
 
-void TopoSession::asyncExec(const int graph_id) {
+
+void TopoSession::asyncExec(const int graph_id, const int async_exec_count) {
     check_async_running();
 
-    const auto combination_graph = CombinationRepo::getGraphById(graph_id);
+    const auto combination_graph = CombinationGraphCache::getInstance().findCombinationGraphById(graph_id);
     if (!combination_graph) {
         throw std::out_of_range("任务不存在，id：" + std::to_string(graph_id));
     }
@@ -338,7 +333,7 @@ void TopoSession::asyncExec(const int graph_id) {
     async_start_time = std::chrono::time_point_cast<std::chrono::milliseconds>(now).time_since_epoch().count();
     running_graph_id = graph_id;
     async_exec_cnt = 0;
-    worker = std::thread(&TopoSession::exec, *combination_graph, true);
+    worker = std::thread(&TopoSession::exec, *combination_graph, true, async_exec_count);
 }
 
 void TopoSession::stopAsyncExec() {
@@ -347,7 +342,7 @@ void TopoSession::stopAsyncExec() {
     worker.join();
 }
 
-asio::awaitable<void> TopoSession::execute_node(int node_id) {
+asio::awaitable<void> TopoSession::execute_node(const int node_id) {
 
     // 捕获 shared_ptr 保证协程运行期间 session 不被销毁
     const auto self = shared_from_this();

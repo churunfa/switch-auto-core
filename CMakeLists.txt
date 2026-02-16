@@ -74,6 +74,7 @@ file(GLOB FUSION_SOURCES "Fusion/*.c")
 
 # 扫描其他 C++ 文件
 file(GLOB_RECURSE REPO_SOURCES "src/repo/*.cpp" "src/repo/*.h")
+file(GLOB_RECURSE CACHE_SOURCES "src/cache/*.cpp" "src/cache/*.h")
 file(GLOB_RECURSE EXEC_SOURCES "src/exec/*.cpp" "src/exec/*.h" "src/controller/*.cpp" "src/controller/*.h")
 file(GLOB_RECURSE SERVICE_SOURCES "src/service/*.cpp" "src/service/*.h")
 file(GLOB_RECURSE LIB_SOURCES "lib/*.cpp" "lib/*.h")
@@ -89,10 +90,17 @@ set(ALL_SOURCES
         ${PROTO_GEN_HDRS}
         ${FUSION_SOURCES}   # 添加 Fusion 源码
         ${REPO_SOURCES}
+        ${CACHE_SOURCES}
         ${EXEC_SOURCES}
         ${SERVICE_SOURCES}
         ${LIB_SOURCES}
-        src/controller/IMUPublisher.h
+        src/cache/CombinationGraphCache.h
+        src/cache/CacheLoader.h
+        src/cache/CacheServiceInterface.h
+        src/cache/BaseOperateCache.h
+        src/repo/base/ButtonBinding.cpp
+        src/repo/base/ButtonBinding.h
+        src/cache/ButtonBindingCache.h
 )
 
 add_executable(switch_auto_core ${ALL_SOURCES})

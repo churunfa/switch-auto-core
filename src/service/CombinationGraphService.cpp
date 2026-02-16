@@ -113,7 +113,7 @@ namespace service {
     }
     grpc::Status CombinationGraphServiceImpl::AsyncExecGraph(grpc::ServerContext *context, const combination::graph::IntValue *request,
         base::SimpleResponse *response) {
-        TopoSession::asyncExec(request -> value());
+        TopoSession::asyncExec(request -> value(), -1);
         response->set_success(true);
         return grpc::Status::OK;
     }

@@ -25,7 +25,7 @@ class CombinationGraph {
     std::map<int, std::vector<CombinationEdge>> out_edge;
 public:
     CombinationGraph(Combination& combination, const std::vector<CombinationNode>& nodes, const std::vector<CombinationEdge>& edges);
-    CombinationGraph(const CombinationGraph& combination);
+    CombinationGraph(const CombinationGraph& combination) = default;
     const std::optional<Combination>& getCombination() const;
     const std::optional<CombinationNode>& getStartNode() const;
     std::vector<const CombinationNode*> getCombinationNode() const;
@@ -65,8 +65,8 @@ class TopoSession : public std::enable_shared_from_this<TopoSession> {
     static void check_async_running();
 public:
     TopoSession(asio::io_context& c, const CombinationGraph& g);
-    static void exec(const CombinationGraph &graph, bool async=false);
-    static void asyncExec(int graph_id);
+    static void exec(const CombinationGraph &graph, bool async=false, int async_exec_count = -1);
+    static void asyncExec(int graph_id, int async_exec_count = -1);
     static void stopAsyncExec();
     static void setAsyncExecStatus(combination::graph::GetAsyncExecStatusResponse *response);
 };

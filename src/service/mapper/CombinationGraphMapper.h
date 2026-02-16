@@ -4,7 +4,6 @@
 
 #ifndef SWITCH_AUTO_CORE_COMBINATIONGRAPHMAPPER_H
 #define SWITCH_AUTO_CORE_COMBINATIONGRAPHMAPPER_H
-#include <google/protobuf/repeated_ptr_field.h>
 
 #include "repo/combination/CombinationGraph.h"
 

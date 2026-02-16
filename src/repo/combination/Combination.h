@@ -13,16 +13,13 @@
 using namespace sqlite_orm;
 
 struct Combination {
-    int id;
+    int id{};
     std::string project_name;
     std::string combination_name;
     std::string desc;
-    int min_time;
+    int min_time{};
 
     Combination() = default;
-    Combination(const Combination& other):id(other.id),project_name(other.project_name), combination_name(other.combination_name),desc(other.desc),min_time(other.min_time) {
-
-    }
 
     static auto getDescription() {
         return make_table("combination",
@@ -38,10 +35,10 @@ struct Combination {
 };
 
 struct CombinationNode {
-    int id;
-    int node_id;
+    int id{};
+    int node_id{};
     std::string node_name;
-    int combination_id;
+    int combination_id{};
     mutable std::shared_ptr<Combination> combination;
     std::string base_operate_ids;
     mutable std::vector<BaseOperate> base_operates;
@@ -51,15 +48,10 @@ struct CombinationNode {
     std::vector<bool> parse_resets;
     std::string auto_resets;
     std::vector<bool> parse_auto_resets;
-    int exec_hold_time;
-    int loop_cnt;
+    int exec_hold_time{};
+    int loop_cnt{};
     CombinationNode() = default;
-    CombinationNode(const CombinationNode& other) : id(other.id), node_id(other.node_id),node_name(other.node_name),combination_id(other.combination_id),
-                                                    combination(other.combination),base_operate_ids(other.base_operate_ids),
-                                                    base_operates(other.base_operates), params(other.params),
-                                                    parse_params(other.parse_params),resets(other.resets),
-                                                    parse_resets(other.parse_resets), auto_resets(other.auto_resets), parse_auto_resets(other.parse_auto_resets), exec_hold_time(other.exec_hold_time), loop_cnt(other.loop_cnt) {
-    }
+    CombinationNode(const CombinationNode& other) = default;
 
     static auto getDescription() {
         return make_table("combination_node",
@@ -80,23 +72,18 @@ struct CombinationNode {
 };
 
 struct CombinationEdge {
-    int id;
-    int edge_id;
+    int id{};
+    int edge_id{};
     std::string edge_name;
-    int combination_id;
+    int combination_id{};
     mutable std::shared_ptr<Combination> combination;
-    int from_combination_id;
+    int from_combination_id{};
     mutable std::shared_ptr<CombinationNode> from_combination_node;
-    int next_combination_id;
+    int next_combination_id{};
     mutable std::shared_ptr<CombinationNode> next_combination_node;
 
     CombinationEdge() = default;
-    CombinationEdge(const CombinationEdge& other) : id(other.id), edge_id(other.edge_id), edge_name(other.edge_name),
-                                                    combination_id(other.combination_id), combination(other.combination),
-                                                    from_combination_id(other.from_combination_id),from_combination_node(other.from_combination_node),
-                                                    next_combination_id(other.next_combination_id),
-                                                    next_combination_node(other.next_combination_node) {
-    }
+    CombinationEdge(const CombinationEdge& other) = default;
 
     static auto getDescription() {
         return make_table("combination_edge",
