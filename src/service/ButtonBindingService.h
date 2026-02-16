@@ -36,6 +36,17 @@ namespace service {
             grpc::ServerContext* context,
             const base::button::UnbindGraphFromButtonRequest* request,
             base::SimpleResponse* response) override;
+
+        // 手柄设备信息查询接口
+        grpc::Status GetConnectedGamepadInfo(
+            grpc::ServerContext* context,
+            const google::protobuf::Empty* request,
+            base::button::GamepadInfoResponse* response) override;
+
+        grpc::Status GetAllGamepadsInfo(
+            grpc::ServerContext* context,
+            const google::protobuf::Empty* request,
+            base::button::AllGamepadsResponse* response) override;
     };
 
 } // namespace service

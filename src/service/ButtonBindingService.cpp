@@ -5,6 +5,7 @@
 #include "ButtonBindingService.h"
 #include "repo/base/ButtonBinding.h"
 #include "lib/SwitchControlLibrary.h"
+#include "controller/ControllerMonitor.h"
 #include <SDL3/SDL.h>
 #include <iostream>
 
@@ -221,6 +222,58 @@ namespace service {
             return grpc::Status(grpc::StatusCode::NOT_FOUND, "Button binding not found or unbind failed");
         }
         return grpc::Status::OK;
+    }
+
+    grpc::Status ButtonBindingServiceImpl::GetConnectedGamepadInfo(
+        grpc::ServerContext* context,
+        const google::protobuf::Empty* request,
+        base::button::GamepadInfoResponse* response) {
+
+        try {
+            auto [connected, name, vendorId, productId, serialNumber] = ControllerMonitor::getInstance().getGamepadInfo();
+
+            auto* info_proto = response->mutable_gamepad_info();
+            info_proto->set_connected(connected);
+            info_proto->set_name(name);
+            info_proto->set_vendor_id(vendorId);
+            info_proto->set_product_id(productId);
+            info_proto->set_serial_number(serialNumber);
+
+            response->set_success(true);
+            return grpc::Status::OK;
+        } catch (const std::exception& e) {
+            std::cerr << "GetConnectedGamepadInfo failed: " << e.what() << std::endl;
+            response->set_success(false);
+            response->set_error_message(e.what());
+            return grpc::Status(grpc::StatusCode::INTERNAL, e.what());
+        }
+    }
+
+    grpc::Status ButtonBindingServiceImpl::GetAllGamepadsInfo(
+        grpc::ServerContext* context,
+        const google::protobuf::Empty* request,
+        base::button::AllGamepadsResponse* response) {
+
+        try {
+            auto gamepads = ControllerMonitor::getInstance().getAllGamepads();
+
+            for (const auto& gamepadInfo : gamepads) {
+                auto* info_proto = response->add_gamepads();
+                info_proto->set_connected(gamepadInfo.connected);
+                info_proto->set_name(gamepadInfo.name);
+                info_proto->set_vendor_id(gamepadInfo.vendorId);
+                info_proto->set_product_id(gamepadInfo.productId);
+                info_proto->set_serial_number(gamepadInfo.serialNumber);
+            }
+
+            response->set_success(true);
+            return grpc::Status::OK;
+        } catch (const std::exception& e) {
+            std::cerr << "GetAllGamepadsInfo failed: " << e.what() << std::endl;
+            response->set_success(false);
+            response->set_error_message(e.what());
+            return grpc::Status(grpc::StatusCode::INTERNAL, e.what());
+        }
     }
 
 } // namespace service

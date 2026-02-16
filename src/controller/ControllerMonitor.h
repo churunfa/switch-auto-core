@@ -7,8 +7,12 @@
 #include <atomic>
 #include <string>
 #include <map>
+#include <vector>
+#include <chrono>
+#include <boost/endian/arithmetic.hpp>
 
 #include "cache/ButtonBindingCache.h"
+#include "cache/CombinationGraphCache.h"
 #include "repo/combination/CombinationGraph.h"
 
 class GamepadStatus {
@@ -138,6 +142,82 @@ public:
             workerThread.join();
         }
         std::cout << "=== 监听线程已停止 ===" << std::endl;
+    }
+
+    // 获取手柄连接状态信息
+    struct GamepadInfo {
+        bool connected;
+        std::string name;
+        std::string vendorId;
+        std::string productId;
+        std::string serialNumber;
+    };
+
+    GamepadInfo getGamepadInfo() const {
+        GamepadInfo info{};
+        if (controller) {
+            info.connected = true;
+            info.name = SDL_GetGamepadName(controller) ? SDL_GetGamepadName(controller) : "Unknown";
+
+            // 获取厂商和产品ID
+            if (SDL_Joystick* joystick = SDL_GetGamepadJoystick(controller)) {
+                const Uint16 vendor = SDL_GetJoystickVendor(joystick);
+                const Uint16 product = SDL_GetJoystickProduct(joystick);
+                info.vendorId = std::to_string(vendor);
+                info.productId = std::to_string(product);
+
+                const char* serial = SDL_GetJoystickSerial(joystick);
+                info.serialNumber = serial ? serial : "N/A";
+            }
+        }
+        return info;
+    }
+
+    // 获取所有可用的手柄设备
+    std::vector<GamepadInfo> getAllGamepads() const {
+        std::vector<GamepadInfo> gamepads;
+
+        int count = 0;
+        if (SDL_JoystickID* joysticks = SDL_GetJoysticks(&count)) {
+            for (int i = 0; i < count; ++i) {
+                const SDL_JoystickID instanceID = joysticks[i];
+                GamepadInfo info{};
+                info.connected = SDL_IsGamepad(instanceID);
+
+                if (info.connected) {
+                    if (SDL_Gamepad* gamepad = SDL_OpenGamepad(instanceID)) {
+                        info.name = SDL_GetGamepadName(gamepad) ? SDL_GetGamepadName(gamepad) : "Unknown";
+
+                        if (SDL_Joystick* joystick = SDL_GetGamepadJoystick(gamepad)) {
+                            const Uint16 vendor = SDL_GetJoystickVendor(joystick);
+                            const Uint16 product = SDL_GetJoystickProduct(joystick);
+                            info.vendorId = std::to_string(vendor);
+                            info.productId = std::to_string(product);
+
+                            const char* serial = SDL_GetJoystickSerial(joystick);
+                            info.serialNumber = serial ? serial : "N/A";
+                        }
+                        SDL_CloseGamepad(gamepad);
+                    }
+                } else {
+                    // 对于非gamepad的joystick，也提供基本信息
+                    if (SDL_Joystick* joystick = SDL_OpenJoystick(instanceID)) {
+                        info.name = SDL_GetJoystickName(joystick) ? SDL_GetJoystickName(joystick) : "Unknown Joystick";
+                        const Uint16 vendor = SDL_GetJoystickVendor(joystick);
+                        const Uint16 product = SDL_GetJoystickProduct(joystick);
+                        info.vendorId = std::to_string(vendor);
+                        info.productId = std::to_string(product);
+
+                        const char* serial = SDL_GetJoystickSerial(joystick);
+                        info.serialNumber = serial ? serial : "N/A";
+                        SDL_CloseJoystick(joystick);
+                    }
+                }
+                gamepads.push_back(info);
+            }
+            SDL_free(joysticks);
+        }
+        return gamepads;
     }
 
 private:

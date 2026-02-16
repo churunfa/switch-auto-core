@@ -72,6 +72,9 @@ service ButtonBindingService {
     rpc SetFunctionKey (SetFunctionKeyRequest) returns (base.SimpleResponse) {}
     rpc BindGraphToButton (BindGraphToButtonRequest) returns (base.SimpleResponse) {}
     rpc UnbindGraphFromButton (UnbindGraphFromButtonRequest) returns (base.SimpleResponse) {}
+    // 手柄设备信息查询接口
+    rpc GetConnectedGamepadInfo (google.protobuf.Empty) returns (GamepadInfoResponse) {}
+    rpc GetAllGamepadsInfo (google.protobuf.Empty) returns (AllGamepadsResponse) {}
 }
 
 message ButtonBinding {
@@ -106,4 +109,25 @@ message BindGraphToButtonRequest {
 
 message UnbindGraphFromButtonRequest {
     int32 id = 1;
+}
+
+// 手柄信息消息
+message GamepadInfo {
+    bool connected = 1;
+    string name = 2;
+    string vendor_id = 3;
+    string product_id = 4;
+    string serial_number = 5;
+}
+
+message GamepadInfoResponse {
+    GamepadInfo gamepad_info = 1;
+    bool success = 2;
+    string error_message = 3;
+}
+
+message AllGamepadsResponse {
+    repeated GamepadInfo gamepads = 1;
+    bool success = 2;
+    string error_message = 3;
 }
