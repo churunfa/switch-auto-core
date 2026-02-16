@@ -74,6 +74,11 @@ struct ButtonBinding {
 class ButtonBindingRepo {
 public:
     static std::vector<ButtonBinding> allButtonBinding();
+    static std::unique_ptr<ButtonBinding> findById(int id);
+    static bool updateBinding(int id, int sdl_btn, int button_type);
+    static bool setFunctionKey(int id, bool function_key);
+    static bool bindGraph(int id, int graph_id);
+    static bool unbindGraph(int id);
 };
 
 #endif //SWITCH_AUTO_CORE_BUTTONBINDING_H

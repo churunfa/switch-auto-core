@@ -48,6 +48,10 @@ public:
     [[nodiscard]] ButtonType getFunctionButton() const {
         return function_button_;
     }
+    
+    [[nodiscard]] bool isFunctionButton(const ButtonType button) const {
+        return function_button_ == button;
+    }
 
     static ButtonBindingCache& getInstance() {
         static ButtonBindingCache instance;

@@ -1,0 +1,52 @@
+syntax = "proto3";
+
+package base.button;
+
+import "base.proto";
+import "google/protobuf/empty.proto";
+
+option java_multiple_files = true;
+option java_package = "com.github.churunfa.switchautoweb.base.button";
+option java_outer_classname = "ButtonBindingProto";
+
+service ButtonBindingService {
+    rpc GetAllButtonBindings (google.protobuf.Empty) returns (GetAllButtonBindingsResponse) {}
+    rpc UpdateButtonBinding (UpdateButtonBindingRequest) returns (base.SimpleResponse) {}
+    rpc SetFunctionKey (SetFunctionKeyRequest) returns (base.SimpleResponse) {}
+    rpc BindGraphToButton (BindGraphToButtonRequest) returns (base.SimpleResponse) {}
+    rpc UnbindGraphFromButton (UnbindGraphFromButtonRequest) returns (base.SimpleResponse) {}
+}
+
+message ButtonBinding {
+    int32 id = 1;
+    int32 sdl_btn = 2;
+    string sdl_btn_name = 3;
+    int32 button_type = 4;
+    string button_name = 5;
+    bool function_key = 6;
+    int32 graph_id = 7;
+}
+
+message GetAllButtonBindingsResponse {
+    repeated ButtonBinding bindings = 1;
+}
+
+message UpdateButtonBindingRequest {
+    int32 id = 1;
+    int32 sdl_btn = 2;
+    int32 button_type = 3;
+}
+
+message SetFunctionKeyRequest {
+    int32 id = 1;
+    bool function_key = 2;
+}
+
+message BindGraphToButtonRequest {
+    int32 id = 1;
+    int32 graph_id = 2;
+}
+
+message UnbindGraphFromButtonRequest {
+    int32 id = 1;
+}

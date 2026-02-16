@@ -7,6 +7,7 @@
 #include "controller/ControllerMonitor.h"
 #include "service/BaseOperateService.h"
 #include "service/CombinationGraphService.h"
+#include "service/ButtonBindingService.h"
 #include "src/repo/DatabaseManager.h"
 
 
@@ -18,6 +19,7 @@ void RunServer() {
     // 注册服务
     builder.RegisterService(new service::BaseOperateServiceImpl());
     builder.RegisterService(new service::CombinationGraphServiceImpl());
+    builder.RegisterService(new service::ButtonBindingServiceImpl());
 
     const std::unique_ptr server(builder.BuildAndStart());
     std::cout << "Server listening on " << server_address << std::endl;
