@@ -126,8 +126,12 @@ std::vector<std::string> CombinationRepo::allProject() {
     return db.select(distinct(&Combination::project_name));
 }
 
+std::vector<Combination> CombinationRepo::allGraph() {
+    return db.get_all<Combination>();
+}
+
 std::vector<Combination> CombinationRepo::allGraph(const std::string &project_name) {
-    return  db.get_all<Combination>(where(c(&Combination::project_name) == project_name));
+    return db.get_all<Combination>(where(c(&Combination::project_name) == project_name));
 }
 
 std::vector<CombinationNode> allCombinationNode(const int combination_id) {

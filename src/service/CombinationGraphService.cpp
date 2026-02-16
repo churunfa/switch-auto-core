@@ -18,7 +18,14 @@ namespace service {
 
     grpc::Status CombinationGraphServiceImpl::GetAllGraph(grpc::ServerContext *context, const combination::graph::StringValue *request,
                                                                    combination::graph::GetAllGraphResponse *response) {
-        for (const auto combinations = CombinationRepo::allGraph(request -> value()); const auto& combination : combinations) {
+        const auto project_name = request -> value();
+        std::vector<Combination> combinations;
+        if (project_name.empty()) {
+            combinations = CombinationRepo::allGraph();
+        } else {
+            combinations = CombinationRepo::allGraph(project_name);
+        }
+        for (const auto& combination : combinations) {
             CombinationGraphMapper::FillCombinationProto(combination, response->add_combinations());
         }
         return grpc::Status::OK;

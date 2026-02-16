@@ -41,6 +41,7 @@ public:
     static void updateGraph(const CombinationGraph &graph);
     static void deleteGraph(int combination_id);
     static std::vector<std::string> allProject();
+    static std::vector<Combination> allGraph();
     static std::vector<Combination> allGraph(const std::string &project_name);
     static std::optional<CombinationGraph> getGraphById(int id);
     static std::optional<CombinationGraph> getGraphByName(const std::string &project_name, const std::string &combination_name);

@@ -12,11 +12,9 @@ class CombinationGraphCache : public CacheService {
     CombinationGraphCache() = default;
 public:
     void load() override {
-        for (const auto & all_project = CombinationRepo::allProject(); const auto& project : all_project) {
-            for (const auto & combinations = CombinationRepo::allGraph(project); const auto& combination : combinations) {
-                if (const auto combination_graph = CombinationRepo::getGraphById(combination.id)) {
-                    graph_map_[combination.id] = std::make_shared<CombinationGraph>(*combination_graph);
-                }
+        for (const auto & combinations = CombinationRepo::allGraph(); const auto& combination : combinations) {
+            if (const auto combination_graph = CombinationRepo::getGraphById(combination.id)) {
+                graph_map_[combination.id] = std::make_shared<CombinationGraph>(*combination_graph);
             }
         }
     }
