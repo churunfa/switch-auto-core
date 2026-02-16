@@ -42,9 +42,14 @@ public:
     }
 
     void send() {
+        static unsigned long last_func_btn = 0;
         bool func_run = false;
         const auto function_button = ButtonBindingCache::getInstance().getFunctionButton();
+        const auto now = std::chrono::time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
         if (inputs[function_button]) {
+            last_func_btn = now;
+        }
+        if (now < last_func_btn + 100) {
             func_run = true;
         }
         // 如果没有函数按键，则按功能按键

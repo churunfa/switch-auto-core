@@ -39,6 +39,9 @@ public:
     }
 
     [[nodiscard]] int getGraphId(const ButtonType button) const {
+        if (!button_graph_map_.contains(button)) {
+            return -1;
+        }
         return button_graph_map_.at(button);
     }
 
