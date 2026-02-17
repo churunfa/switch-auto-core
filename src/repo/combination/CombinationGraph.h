@@ -16,14 +16,15 @@ struct CombinationEdge;
 
 
 class CombinationGraph {
-    std::optional<Combination> combination = std::nullopt;
     std::optional<CombinationNode> start_node = std::nullopt;
 
-    std::map<int, CombinationNode> node_map;
-    std::map<int, CombinationEdge> edge_map;
 
     std::map<int, std::vector<CombinationEdge>> out_edge;
 public:
+    std::optional<Combination> combination = std::nullopt;
+    std::map<int, CombinationNode> node_map;
+    std::map<int, CombinationEdge> edge_map;
+
     CombinationGraph(Combination& combination, const std::vector<CombinationNode>& nodes, const std::vector<CombinationEdge>& edges);
     CombinationGraph(const CombinationGraph& combination) = default;
     const std::optional<Combination>& getCombination() const;
