@@ -17,7 +17,16 @@ FetchContent_Declare(
         GIT_TAG        v1.9.1
 )
 
-FetchContent_MakeAvailable(sqlite_orm)
+
+FetchContent_Declare(
+        glaze
+        GIT_REPOSITORY https://github.com/stephenberry/glaze.git
+        GIT_TAG        v7.0.2
+)
+
+
+FetchContent_MakeAvailable(sqlite_orm glaze)
+
 
 # ---------------------------------------------------------
 # 1. 查找依赖 (Config 模式)
@@ -117,6 +126,7 @@ target_include_directories(switch_auto_core PRIVATE
         ${GEN_GRPC_PATH}
         ${bs_thread_pool_SOURCE_DIR}/include
         ${Boost_INCLUDE_DIRS}
+        ${glaze_SOURCE_DIR}/include
 )
 
 target_link_libraries(switch_auto_core PRIVATE

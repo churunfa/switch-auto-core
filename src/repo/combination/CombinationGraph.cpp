@@ -268,9 +268,7 @@ asio::awaitable<void> TopoSession::runNode(CombinationNode node) {
         if (auto_reset_sleep_time != 0) {
             co_await coroutine::async_sleep_task(auto_reset_sleep_time);
         }
-
     }
-    switch_control_library.sendReport();
 }
 
 asio::awaitable<void> TopoSession::execCore(const CombinationGraph &graph) {
