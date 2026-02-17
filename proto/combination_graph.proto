@@ -22,7 +22,7 @@ service CombinationGraphService {
     rpc AsyncExecGraph(IntValue) returns (base.SimpleResponse) {};
     rpc StopAsyncExecGraph(google.protobuf.Empty) returns (base.SimpleResponse) {};
     rpc GetAsyncExecStatus(google.protobuf.Empty) returns (GetAsyncExecStatusResponse) {};
-    rpc setLoopGraphById(IntValue) returns (base.SimpleResponse) {};
+    rpc SetLoopGraphById(IntValue) returns (base.SimpleResponse) {};
 }
 
 message Combination {

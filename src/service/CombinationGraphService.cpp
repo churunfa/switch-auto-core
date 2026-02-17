@@ -140,7 +140,7 @@ namespace service {
         return grpc::Status::OK;
     }
 
-    grpc::Status CombinationGraphServiceImpl::setLoopGraphById(grpc::ServerContext *context, const combination::graph::IntValue *request,
+    grpc::Status CombinationGraphServiceImpl::SetLoopGraphById(grpc::ServerContext *context, const combination::graph::IntValue *request,
                                       base::SimpleResponse *response) {
         const int graph_id = request->value();
         

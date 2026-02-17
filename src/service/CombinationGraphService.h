@@ -45,7 +45,7 @@ namespace service {
         grpc::Status GetAsyncExecStatus(grpc::ServerContext *context, const google::protobuf::Empty *request,
                                         combination::graph::GetAsyncExecStatusResponse *response) override;
 
-        grpc::Status setLoopGraphById(grpc::ServerContext *context, const combination::graph::IntValue *request,
+        grpc::Status SetLoopGraphById(grpc::ServerContext *context, const combination::graph::IntValue *request,
                                       base::SimpleResponse *response) override;
     };
 
