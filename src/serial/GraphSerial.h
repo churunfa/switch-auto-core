@@ -62,6 +62,7 @@ struct glz::meta<Graph> {
 };
 
 class GraphSerial {
+public:
     static Graph buildGraph(const CombinationGraph &combination_graph) {
         Graph graph;
         graph.id = combination_graph.combination->id;

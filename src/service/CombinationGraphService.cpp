@@ -4,8 +4,10 @@
 
 #include "CombinationGraphService.h"
 
+#include "SwitchControlLibrary.h"
 #include "mapper/CombinationGraphMapper.h"
 #include "repo/combination/CombinationGraph.h"
+#include "serial/GraphSerial.h"
 
 namespace service {
     grpc::Status CombinationGraphServiceImpl::GetAllProject(grpc::ServerContext *context, const google::protobuf::Empty *request,
@@ -136,5 +138,31 @@ namespace service {
                                         combination::graph::GetAsyncExecStatusResponse *response) {
         TopoSession::setAsyncExecStatus(response);
         return grpc::Status::OK;
+    }
+
+    grpc::Status CombinationGraphServiceImpl::setLoopGraphById(grpc::ServerContext *context, const combination::graph::IntValue *request,
+                                      base::SimpleResponse *response) {
+        const int graph_id = request->value();
+        
+        // 获取图信息
+        const auto combination_graph = CombinationRepo::getGraphById(graph_id);
+        if (!combination_graph.has_value()) {
+            return {grpc::StatusCode::NOT_FOUND, "Graph not found"};
+        }
+
+        try {
+            auto build_graph = GraphSerial::buildGraph(*combination_graph);
+            std::string buffer;
+            if(glz::read_json(build_graph, buffer)) {
+                throw std::runtime_error("json解析异常");
+            }
+            SwitchControlLibrary::getInstance().sendBytes(buffer.c_str(), buffer.size(), 1000);
+            response->set_success(true);
+            return grpc::Status::OK;
+        } catch (const std::exception& e) {
+            response->set_success(false);
+            return {grpc::Status(grpc::StatusCode::INTERNAL,
+                               std::string("Set loop graph failed: ") + e.what())};
+        }
     }
 }
