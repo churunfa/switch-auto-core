@@ -133,6 +133,62 @@ void SwitchControlLibrary::sendBytes(const void *buf, const size_t count, const 
         std::cout << "发送失败" << std::endl;
     }
 }
+void SwitchControlLibrary::sendVector(const std::vector<uint8_t>& in_buf, const uint8_t type) {
+    std::vector<uint8_t> buf;
+    buf.reserve(in_buf.size() + 4);
+    buf.push_back(0xAA);
+    buf.push_back(0x55);
+    buf.push_back(type);
+    uint8_t verifyCheckSum = 0;
+    verifyCheckSum ^= type;
+    for (unsigned char i : in_buf) {
+        buf.push_back(i);
+        verifyCheckSum ^= i;
+    }
+    buf.push_back(verifyCheckSum);;
+
+    sendBytes(buf.data(), buf.size(), 100);
+}
+
+void SwitchControlLibrary::sendStr(const std::string& str, const uint8_t type) {
+    if (str.empty()) {
+        return;
+    }
+    /**
+     * 报文格式：0,1-当前分片   2,3-最后一个分片的编号   4-数据长度  >5-数据
+     */
+    constexpr uint8_t batch_size = 128;
+    const uint16_t last_shard_index = str.size() / batch_size;
+
+    for (uint16_t shard_index = 0; shard_index <= last_shard_index; shard_index++) {
+        std::vector<uint8_t> in_buf;
+        
+        // 添加当前分片索引 (2字节)
+        in_buf.push_back(shard_index & 0xFF);
+        in_buf.push_back(shard_index >> 8 & 0xFF);
+        
+        // 添加最后一个分片索引 (2字节)
+        in_buf.push_back(last_shard_index & 0xFF);
+        in_buf.push_back(last_shard_index >> 8 & 0xFF);
+        
+        // 计算当前分片的数据
+        const size_t start_pos = shard_index * batch_size;
+        const size_t end_pos = std::min(start_pos + batch_size, str.size());
+        const size_t data_length = end_pos - start_pos;
+        
+        // 添加数据长度 (1字节)
+        in_buf.push_back(static_cast<uint8_t>(data_length));
+        
+        // 添加实际数据
+        for (size_t i = start_pos; i < end_pos; ++i) {
+            in_buf.push_back(static_cast<uint8_t>(str[i]));
+        }
+        
+        // 发送当前分片
+        sendVector(in_buf, type);
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    }
+}
 
 void SwitchControlLibrary::resetAll() {
     std::lock_guard lock(reportMtx);

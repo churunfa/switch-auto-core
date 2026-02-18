@@ -106,20 +106,7 @@ public:
             std::cerr << "错误详情: " << error_message << std::endl;
             throw std::runtime_error("json解析异常");
         }
-        std::vector<uint8_t> buf = {0xAA, 0x55, 0x02};
-
-        buf.push_back(json.length() & 0xFF);
-        buf.push_back(json.length() >> 8 & 0xFF);
-        buf.push_back(json.length() >> 16 & 0xFF);
-        for (const char c : json) {
-            buf.push_back(c);
-        }
-        uint8_t verifyCheckSum = 0;
-        for (int i = 3; i < buf.size(); i++) {
-            verifyCheckSum ^= buf[i];
-        }
-        buf.push_back(verifyCheckSum);
-        SwitchControlLibrary::getInstance().sendBytes(buf.data(), buf.size(), 1000);
+        SwitchControlLibrary::getInstance().sendStr(json, 0x02);
     }
 };
 
