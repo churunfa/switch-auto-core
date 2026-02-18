@@ -127,7 +127,8 @@ void SwitchControlLibrary::sendReport() {
     memcpy(&lastSwitchReport, &switchReport, sizeof(SwitchProReport));
 }
 
-void SwitchControlLibrary::sendBytes(const void *buf, const size_t count, const unsigned int timeout_ms) const {
+void SwitchControlLibrary::sendBytes(const void *buf, const size_t count, const unsigned int timeout_ms) {
+    std::lock_guard lock(reportMtx);
     if (const sp_return result = sp_blocking_write(port, buf, count, timeout_ms); result < 0) {
         std::cout << "发送失败" << std::endl;
     }

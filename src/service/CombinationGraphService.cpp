@@ -151,18 +151,13 @@ namespace service {
         }
 
         try {
-            auto build_graph = GraphSerial::buildGraph(*combination_graph);
-            std::string buffer;
-            if(glz::read_json(build_graph, buffer)) {
-                throw std::runtime_error("json解析异常");
-            }
-            SwitchControlLibrary::getInstance().sendBytes(buffer.c_str(), buffer.size(), 1000);
+            const auto build_graph = GraphSerial::buildGraph(*combination_graph);
+            GraphSerial::sendGraph(build_graph);
             response->set_success(true);
             return grpc::Status::OK;
         } catch (const std::exception& e) {
             response->set_success(false);
-            return {grpc::Status(grpc::StatusCode::INTERNAL,
-                               std::string("Set loop graph failed: ") + e.what())};
+            return {grpc::Status(grpc::StatusCode::INTERNAL, e.what())};
         }
     }
 }

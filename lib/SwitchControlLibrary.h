@@ -61,7 +61,7 @@ public:
     void resetIMU();
     void resetAll();
     void sendReport();
-    void sendBytes(const void *buf, size_t count, unsigned int timeout_ms) const;
+    void sendBytes(const void *buf, size_t count, unsigned int timeout_ms);
     void delayTest();
     void serialRead() const;
 
