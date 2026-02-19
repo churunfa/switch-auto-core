@@ -69,38 +69,38 @@ public:
                 }
             }
         } else {
-        bool original_func_press = false;
-        int execGraphId = -1;
-        for (auto [fst, snd] : inputs) {
-            if (fst == function_button) {
-                continue;
-            }
-            if (snd) {
-                // 函数按键，未配置的按照功能按键原始功能处理
-                const int graph_id = ButtonBindingCache::getInstance().getGraphId(fst);
-                if (graph_id == -1) {
-                    original_func_press = true;
+            bool original_func_press = false;
+            int execGraphId = -1;
+            for (auto [fst, snd] : inputs) {
+                if (fst == function_button) {
                     continue;
                 }
-                if (CombinationGraphCache::getInstance().findCombinationGraphById(graph_id)) {
-                    execGraphId = graph_id;
+                if (snd) {
+                    // 函数按键，未配置的按照功能按键原始功能处理
+                    const int graph_id = ButtonBindingCache::getInstance().getGraphId(fst);
+                    if (graph_id == -1) {
+                        original_func_press = true;
+                        continue;
+                    }
+                    if (CombinationGraphCache::getInstance().findCombinationGraphById(graph_id)) {
+                        execGraphId = graph_id;
+                    }
                 }
             }
-        }
-        // 处理功能按键
-        if (original_func_press) {
-            SwitchControlLibrary::getInstance().pressButton(function_button);
-        } else {
-            SwitchControlLibrary::getInstance().releaseButton(function_button);
-        }
-        if (execGraphId != -1 && !TopoSession::async_running) {
-            // 执行拓扑图
-            try {
-                TopoSession::asyncExec(execGraphId, 1);
-            } catch (const std::exception& e) {
-                std::cerr << "Error: " << e.what() << std::endl;
+            // 处理功能按键
+            if (original_func_press) {
+                SwitchControlLibrary::getInstance().pressButton(function_button);
+            } else {
+                SwitchControlLibrary::getInstance().releaseButton(function_button);
             }
-        }
+            if (execGraphId != -1 && !TopoSession::async_running) {
+                // 执行拓扑图
+                try {
+                    TopoSession::asyncExec(execGraphId, 1);
+                } catch (const std::exception& e) {
+                    std::cerr << "Error: " << e.what() << std::endl;
+                }
+            }
         }
 
         if (sendLeftStick) {
@@ -174,7 +174,7 @@ public:
     }
 
     // 获取所有可用的手柄设备
-    std::vector<GamepadInfo> getAllGamepads() const {
+    static std::vector<GamepadInfo> getAllGamepads() {
         std::vector<GamepadInfo> gamepads;
 
         int count = 0;

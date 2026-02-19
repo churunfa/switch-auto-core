@@ -52,7 +52,7 @@ std::vector<CombinationNode> copyCombinationNodes(const std::vector<const Combin
     std::vector<CombinationNode> combination_nodes_copy;
     combination_nodes_copy.reserve(combination_nodes.size());
 for (const auto combination_node : combination_nodes) {
-        combination_nodes_copy.emplace_back(CombinationNode(*combination_node));
+        combination_nodes_copy.emplace_back(*combination_node);
     }
     return combination_nodes_copy;
 }
@@ -61,7 +61,7 @@ std::vector<CombinationEdge> copyCombinationEdges(const std::vector<const Combin
     std::vector<CombinationEdge> combination_edges_copy;
     combination_edges_copy.reserve(combination_edges.size());
     for (const auto combination_edge : combination_edges) {
-        combination_edges_copy.emplace_back(CombinationEdge(*combination_edge));
+        combination_edges_copy.emplace_back(*combination_edge);
     }
     return combination_edges_copy;
 }
@@ -108,7 +108,7 @@ void updateOrSaveGraphCore(const CombinationGraph &graph, const bool insert) {
             return true; // 提交事务
         });
     } catch (const std::exception& e) {
-        std::string msg = e.what();
+        const std::string msg = e.what();
         std::cerr << "Transaction failed: " << msg << std::endl;
         throw std::out_of_range("写入失败" + msg);
     }

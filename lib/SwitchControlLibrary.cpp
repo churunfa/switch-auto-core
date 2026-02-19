@@ -106,7 +106,9 @@ void SwitchControlLibrary::loop(){
 
 void SwitchControlLibrary::sendReport() {
     std::lock_guard lock(reportMtx);
-
+    if (!port) {
+        return;
+    }
     if (memcmp(&lastSwitchReport, &switchReport, reportSize) == 0) {
         return;
     }
