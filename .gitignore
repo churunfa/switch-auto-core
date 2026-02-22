@@ -29,3 +29,5 @@ CMakeFiles/
 *.bak
 
 generated
+
+build-static/
