@@ -1,0 +1,24 @@
+#!/bin/bash
+# start.sh.in - 启动脚本模板
+
+# 获取脚本所在目录
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+EXECUTABLE="@CMAKE_INSTALL_PREFIX@/bin/switch_auto_core"
+
+# 设置库路径
+export LD_LIBRARY_PATH="@CMAKE_INSTALL_PREFIX@/lib:$LD_LIBRARY_PATH"
+
+# macOS特定处理
+if [[ "$(uname)" == "Darwin" ]]; then
+    export DYLD_LIBRARY_PATH="@CMAKE_INSTALL_PREFIX@/lib:$DYLD_LIBRARY_PATH"
+fi
+
+# 检查可执行文件是否存在
+if [[ ! -x "$EXECUTABLE" ]]; then
+    echo "错误: 找不到可执行文件 $EXECUTABLE"
+    echo "请确保程序已正确安装"
+    exit 1
+fi
+
+# 运行程序
+exec "$EXECUTABLE" "$@"

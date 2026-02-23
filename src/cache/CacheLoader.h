@@ -7,6 +7,7 @@
 #include <iostream>
 #include <thread>
 #include <vector>
+#include <atomic>
 
 #include "BaseOperateCache.h"
 #include "ButtonBindingCache.h"
@@ -17,6 +18,7 @@
 class CacheLoader {
     std::vector<CacheService*> strategies;
     std::thread worker;
+    std::atomic<bool> isRunning{true};
     CacheLoader() {
         strategies.push_back(&CombinationGraphCache::getInstance());
         strategies.push_back(&ButtonBindingCache::getInstance());
@@ -25,9 +27,11 @@ class CacheLoader {
     }
 
     [[noreturn]] void loop() const {
-        while (true) {
+        while (isRunning) {
             load();
-            std::this_thread::sleep_for(std::chrono::seconds(10));
+            for (int i = 0; i < 10 && isRunning; ++i) {
+                std::this_thread::sleep_for(std::chrono::seconds(1));
+            }
         }
     }
     void load() const {
@@ -43,6 +47,14 @@ public:
     static CacheLoader& getInstance() {
         static CacheLoader instance;
         return instance;
+    }
+    
+    void stop() {
+        isRunning = false;
+        if (worker.joinable()) {
+            worker.join();
+        }
+        std::cout << "缓存加载器已停止" << std::endl;
     }
     // 禁止拷贝
     CacheLoader(const CacheLoader&) = delete;
