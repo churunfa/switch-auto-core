@@ -31,3 +31,6 @@ CMakeFiles/
 generated
 
 build-static/
+build/
+release-build/SwitchAutoCore_Mac
+release-build/SwitchAutoCore_Mac.zip

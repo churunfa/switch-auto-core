@@ -46,12 +46,10 @@ public:
     static std::unique_ptr<Storage> createNewConnection() {
         try {
             auto storage = std::make_unique<Storage>(createStorage([]() -> std::string {
-                const char* env_path = std::getenv("SWITCH_AUTO_DB_PATH");
-                if (env_path != nullptr) {
-                    return std::string(env_path);
-                } else {
-                    throw std::runtime_error("Environment variable SWITCH_AUTO_DB_PATH is not set.");
+                if (const char* env_path = std::getenv("SWITCH_AUTO_DB_PATH"); env_path != nullptr) {
+                    return {env_path};
                 }
+                throw std::runtime_error("Environment variable SWITCH_AUTO_DB_PATH is not set.");
             }()));
             // 只有主线程或者初始化线程需要 sync_schema，
             // 但 sqlite_orm 的 sync_schema 会安全处理“已存在”的情况
