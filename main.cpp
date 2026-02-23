@@ -25,7 +25,12 @@ void signal_handler(const int signal) {
 }
 
 void RunServer() {
-    constexpr std::string server_address("0.0.0.0:50051");
+    std::string server_address = "0.0.0.0:";
+    if (const char* port_env = std::getenv("SWITCH_AUTO_CORE_PORT")) {
+        server_address += port_env;
+    } else {
+        server_address += "50051";
+    }
 
     grpc::ServerBuilder builder;
     builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
