@@ -35,8 +35,8 @@ struct ButtonBinding {
 
     static const std::vector<ButtonBinding>& getStaticDefaults() {
         static const std::vector<ButtonBinding> defaults = {
-            {0, SDL_GAMEPAD_BUTTON_EAST, "A", BUTTON_A, "A", false, -1},
             {0, SDL_GAMEPAD_BUTTON_SOUTH, "B", BUTTON_B, "B", false, -1},
+            {0, SDL_GAMEPAD_BUTTON_EAST, "A", BUTTON_A, "A", false, -1},
             {0, SDL_GAMEPAD_BUTTON_WEST, "Y", BUTTON_Y, "Y", false, -1},
             {0, SDL_GAMEPAD_BUTTON_NORTH, "X", BUTTON_X, "X", false, -1},
             {0, SDL_GAMEPAD_BUTTON_BACK, "-", BUTTON_MINUS, "-", false, -1},
@@ -51,6 +51,18 @@ struct ButtonBinding {
             {0, SDL_GAMEPAD_BUTTON_DPAD_DOWN, "⬇️", DPAD_DOWN, "⬇️", false, -1},
             {0, SDL_GAMEPAD_BUTTON_DPAD_LEFT, "⬅️", DPAD_LEFT, "⬅️", false, -1},
             {0, SDL_GAMEPAD_BUTTON_DPAD_RIGHT, "➡️", DPAD_RIGHT, "➡️", false, -1},
+            {0, SDL_GAMEPAD_BUTTON_RIGHT_PADDLE1, "右SR键", BUTTON_SR, "SR", false, -1},
+            {0, SDL_GAMEPAD_BUTTON_LEFT_PADDLE1, "左SL键", BUTTON_LEFT_SL, "左SL键", false, -1},
+            {0, SDL_GAMEPAD_BUTTON_LEFT_PADDLE2, "左SR键", BUTTON_LEFT_SR, "左SR键", false, -1},
+            {0, SDL_GAMEPAD_BUTTON_RIGHT_PADDLE2, "右SL键", BUTTON_SL, "SL", false, -1},
+            {0, SDL_GAMEPAD_BUTTON_TOUCHPAD, "触控板", BUTTON_NONE, "NONE", false, -1},
+            {0, SDL_GAMEPAD_BUTTON_MISC2, "附加按键1", BUTTON_NONE, "NONE", false, -1},
+            {0, SDL_GAMEPAD_BUTTON_MISC3, "附加按键2", BUTTON_NONE, "NONE", false, -1},
+            {0, SDL_GAMEPAD_BUTTON_MISC4, "附加按键3", BUTTON_NONE, "NONE", false, -1},
+            {0, SDL_GAMEPAD_BUTTON_MISC5, "附加按键4", BUTTON_NONE, "NONE", false, -1},
+            {0, SDL_GAMEPAD_BUTTON_MISC6, "附加按键5", BUTTON_NONE, "NONE", false, -1},
+            {0, SDL_GAMEPAD_BUTTON_COUNT, "未知按键", BUTTON_NONE, "NONE", false, -1},
+            {0, SDL_GAMEPAD_BUTTON_INVALID, "无效按键", BUTTON_NONE, "NONE", false, -1},
         };
         return defaults;
     }
