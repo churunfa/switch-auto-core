@@ -4,8 +4,12 @@ project(switch_auto_core)
 # Fusion 是 C 语言库，这里保持 CXX 标准的同时，CMake 会自动处理 C 语言编译
 set(CMAKE_CXX_STANDARD 23)
 
-include_directories(/opt/homebrew/include)
-link_directories(/opt/homebrew/lib)
+if(WIN32)
+    # Windows 平台配置
+else()
+    include_directories(/opt/homebrew/include)
+    link_directories(/opt/homebrew/lib)
+endif()
 
 include(FetchContent)
 
