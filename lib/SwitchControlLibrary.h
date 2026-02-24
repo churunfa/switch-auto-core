@@ -61,6 +61,7 @@ public:
     void resetIMU();
     void resetAll();
     void sendReport();
+    void wakeUp() const;
     void sendBytes(const void *buf, size_t count, unsigned int timeout_ms);
     void sendVector(const std::vector<uint8_t>& in_buf, uint8_t type);
     void sendStr(const std::string& str, uint8_t type);

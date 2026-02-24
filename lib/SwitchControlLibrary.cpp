@@ -98,9 +98,19 @@ void SwitchControlLibrary::loop(){
             std::this_thread::sleep_for(std::chrono::seconds(1));
             continue;
         }
+        if (switchReport.inputs.buttonHome) {
+            wakeUp();
+        }
         sendReport();
         serialRead();
         std::this_thread::sleep_for(std::chrono::milliseconds(15));
+    }
+}
+
+void SwitchControlLibrary::wakeUp() const {
+    constexpr static uint8_t wakeUpData[] = {0xAA, 0x55, 0x04, 0x00, 0x04};
+    if (const sp_return result = sp_blocking_write(port, wakeUpData, 5, 5); result < 0) {
+        std::cout << "发送失败" << std::endl;
     }
 }
 
