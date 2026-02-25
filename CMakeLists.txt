@@ -138,7 +138,6 @@ target_link_libraries(switch_auto_core PRIVATE
         gRPC::grpc++
         sqlite3
         sqlite_orm::sqlite_orm
-        serialport
         SDL3::SDL3
 )
 
