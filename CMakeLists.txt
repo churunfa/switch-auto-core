@@ -43,6 +43,12 @@ find_package(Boost CONFIG REQUIRED)
 # SDL3 查找
 find_package(SDL3 REQUIRED CONFIG REQUIRED COMPONENTS SDL3)
 
+# SQLite3 查找 (兼容 vcpkg)
+find_package(unofficial-sqlite3 CONFIG QUIET)
+if(NOT unofficial-sqlite3_FOUND)
+    find_package(SQLite3 REQUIRED)
+endif()
+
 # ---------------------------------------------------------
 # 2. 定义 Proto 编译逻辑
 # ---------------------------------------------------------
@@ -140,7 +146,8 @@ target_link_libraries(switch_auto_core PRIVATE
         protobuf::libprotobuf
         gRPC::grpc++_reflection
         gRPC::grpc++
-        sqlite3
+        $<$<TARGET_EXISTS:unofficial::sqlite3::sqlite3>:unofficial::sqlite3::sqlite3>
+        $<$<NOT:$<TARGET_EXISTS:unofficial::sqlite3::sqlite3>>:SQLite::SQLite3>
         sqlite_orm::sqlite_orm
         SDL3::SDL3
 )

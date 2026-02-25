@@ -7,15 +7,19 @@
 #include <cstdint>
 #include <boost/endian/arithmetic.hpp>
 
+// 跨平台结构体内存对齐宏定义
 #ifdef _MSC_VER
-#pragma pack(push, 1)
+    #define PACKED_STRUCT_BEGIN __pragma(pack(push, 1))
+    #define PACKED_STRUCT_END   __pragma(pack(pop))
+    #define PACKED 
+#else
+    #define PACKED_STRUCT_BEGIN 
+    #define PACKED_STRUCT_END   
+    #define PACKED __attribute__((packed, aligned(1)))
 #endif
 
-typedef struct 
-#ifndef _MSC_VER
-__attribute__((packed, aligned(1)))
-#endif
-{
+PACKED_STRUCT_BEGIN
+typedef struct PACKED {
     // byte 00
     uint8_t buttonY : 1;
     uint8_t buttonX : 1;
@@ -46,37 +50,17 @@ __attribute__((packed, aligned(1)))
     uint8_t buttonL : 1;
     uint8_t buttonZL : 1;
 } SwitchInputReport;
+PACKED_STRUCT_END
 
-#ifdef _MSC_VER
-#pragma pack(pop)
-#endif
-
-#ifdef _MSC_VER
-#pragma pack(push, 1)
-#endif
-
-typedef struct 
-#ifndef _MSC_VER
-__attribute__((packed, aligned(1)))
-#endif
-{
+PACKED_STRUCT_BEGIN
+typedef struct PACKED {
     uint8_t data[3];
 } SwitchAnalog;
-
-#ifdef _MSC_VER
-#pragma pack(pop)
-#endif
+PACKED_STRUCT_END
 
 
-#ifdef _MSC_VER
-#pragma pack(push, 1)
-#endif
-
-typedef struct 
-#ifndef _MSC_VER
-__attribute__((packed, aligned(1)))
-#endif
-{
+PACKED_STRUCT_BEGIN
+typedef struct PACKED {
     boost::endian::little_int16_t accX;
     boost::endian::little_int16_t accY;
     boost::endian::little_int16_t accZ;
@@ -84,29 +68,21 @@ __attribute__((packed, aligned(1)))
     boost::endian::little_int16_t gyroY;
     boost::endian::little_int16_t gyroZ;
 } ImuData;
+PACKED_STRUCT_END
 
-#ifdef _MSC_VER
-#pragma pack(pop)
-#endif
-
-#ifdef _MSC_VER
-#pragma pack(push, 1)
-#endif
-
-typedef struct 
-#ifndef _MSC_VER
-__attribute__((packed, aligned(1)))
-#endif
-{
+PACKED_STRUCT_BEGIN
+typedef struct PACKED {
     SwitchInputReport inputs;
     SwitchAnalog leftStick;
     SwitchAnalog rightStick;
     ImuData imuData[3];
 } SwitchProReport;
+PACKED_STRUCT_END
 
-#ifdef _MSC_VER
-#pragma pack(pop)
-#endif
+// 清理宏定义
+#undef PACKED_STRUCT_BEGIN
+#undef PACKED_STRUCT_END
+#undef PACKED
 
 
 #endif //CONTROLLER_SWITCH_REPORT_H
