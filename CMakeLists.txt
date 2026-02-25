@@ -11,6 +11,10 @@ else()
     link_directories(/opt/homebrew/lib)
 endif()
 
+if (MSVC)
+    add_compile_options("/utf-8")
+endif()
+
 include(FetchContent)
 
 FetchContent_Declare(

@@ -7,7 +7,14 @@
 #include <cstdint>
 #include <boost/endian/arithmetic.hpp>
 
-typedef struct __attribute((packed, aligned(1)))
+#ifdef _MSC_VER
+#pragma pack(push, 1)
+#endif
+
+typedef struct 
+#ifndef _MSC_VER
+__attribute__((packed, aligned(1)))
+#endif
 {
     // byte 00
     uint8_t buttonY : 1;
@@ -40,12 +47,36 @@ typedef struct __attribute((packed, aligned(1)))
     uint8_t buttonZL : 1;
 } SwitchInputReport;
 
-typedef struct __attribute((packed, aligned(1))){
+#ifdef _MSC_VER
+#pragma pack(pop)
+#endif
+
+#ifdef _MSC_VER
+#pragma pack(push, 1)
+#endif
+
+typedef struct 
+#ifndef _MSC_VER
+__attribute__((packed, aligned(1)))
+#endif
+{
     uint8_t data[3];
 } SwitchAnalog;
 
+#ifdef _MSC_VER
+#pragma pack(pop)
+#endif
 
-typedef struct __attribute((packed, aligned(1))){
+
+#ifdef _MSC_VER
+#pragma pack(push, 1)
+#endif
+
+typedef struct 
+#ifndef _MSC_VER
+__attribute__((packed, aligned(1)))
+#endif
+{
     boost::endian::little_int16_t accX;
     boost::endian::little_int16_t accY;
     boost::endian::little_int16_t accZ;
@@ -54,12 +85,28 @@ typedef struct __attribute((packed, aligned(1))){
     boost::endian::little_int16_t gyroZ;
 } ImuData;
 
-typedef struct __attribute((packed, aligned(1))) {
+#ifdef _MSC_VER
+#pragma pack(pop)
+#endif
+
+#ifdef _MSC_VER
+#pragma pack(push, 1)
+#endif
+
+typedef struct 
+#ifndef _MSC_VER
+__attribute__((packed, aligned(1)))
+#endif
+{
     SwitchInputReport inputs;
     SwitchAnalog leftStick;
     SwitchAnalog rightStick;
     ImuData imuData[3];
 } SwitchProReport;
+
+#ifdef _MSC_VER
+#pragma pack(pop)
+#endif
 
 
 #endif //CONTROLLER_SWITCH_REPORT_H
