@@ -4,6 +4,10 @@
 #include <grpcpp/grpcpp.h>
 #include <csignal>
 #include <atomic>
+#include <cstdlib>
+#ifdef _WIN32
+#include <windows.h>
+#endif
 #include "SwitchControlLibrary.h"
 #include "cache/CacheLoader.h"
 #include "controller/ControllerMonitor.h"
@@ -50,6 +54,13 @@ void RunServer() {
 }
 
 int main(int argc, char** argv) {
+    // 禁用 SDL 断言弹窗
+    #ifdef _WIN32
+    SetEnvironmentVariableA("SDL_ASSERT", "always_ignore");
+    SDL_SetAssertionHandler(nullptr, nullptr);
+    #else
+    #endif
+    
     signal(SIGINT, signal_handler);
     signal(SIGTERM, signal_handler);
     

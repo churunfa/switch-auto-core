@@ -12,6 +12,7 @@
 #include "base/ButtonBinding.h"
 #include "base/IdGenerate.h"
 #include "combination/Combination.h"
+#define SDL_DISABLE_THREADS 1
 
 using namespace sqlite_orm;
 

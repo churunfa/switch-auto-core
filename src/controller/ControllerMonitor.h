@@ -131,6 +131,9 @@ public:
 
         std::cout << ">>> 正在后台等待设备..." << std::endl;
 
+        // 在工作线程中禁用 SDL 断言检查
+        // 已通过环境变量在 main.cpp 中设置 SDL_ASSERT_LEVEL=0
+
         isRunning = true;
         workerThread = std::thread(&ControllerMonitor::threadLoop, this);
     }
