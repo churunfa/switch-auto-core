@@ -8,6 +8,7 @@
 #include <mutex>
 #include <thread>
 #include <vector>
+#include <boost/asio.hpp>
 
 #include "SwitchReport.h"
 #include "SerialPort.h"
@@ -66,7 +67,7 @@ public:
     void sendVector(const std::vector<uint8_t>& in_buf, uint8_t type);
     void sendStr(const std::string& str, uint8_t type);
     void delayTest();
-    void serialRead() const;
+    void serialRead();
 
     static SwitchControlLibrary& getInstance();
 
@@ -86,7 +87,10 @@ private:
     uint8_t header[2]={0xAA, 0x55};
     std::vector<uint8_t> buffer;
     long long imuLastCollectTime;
-    struct sp_port *port{};
+    // 添加 Asio 的 io_context
+    boost::asio::io_context io_context;
+
+    std::unique_ptr<boost::asio::serial_port> port;
 
     void initSerial();
     void cleanup();
