@@ -153,3 +153,42 @@ target_link_libraries(switch_auto_core PRIVATE
 )
 
 set_directory_properties(PROPERTIES ADDITIONAL_CLEAN_FILES "${GEN_BASE_PATH}")
+
+# =========================================================
+# 6. 绿色打包配置 (Windows/Linux 自动搜集依赖)
+# =========================================================
+
+if(MSVC)
+    set_target_properties(switch_auto_core PROPERTIES
+            MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>"
+    )
+endif()
+
+# B. 定义安装目标
+install(TARGETS switch_auto_core RUNTIME DESTINATION .)
+
+# C. 核心：自动扫描并拷贝第三方 DLL (仅限 Windows)
+if(WIN32)
+    install(CODE [[
+        file(GET_RUNTIME_DEPENDENCIES
+            EXECUTABLES $<TARGET_FILE:switch_auto_core>
+            RESOLVED_DEPENDENCIES_VAR _deps
+            UNRESOLVED_DEPENDENCIES_VAR _notfound
+            # 排除 Windows 系统核心库，只抓取 gRPC, SDL3, SQLite 等第三方库
+            PRE_EXCLUDE_REGEXES "api-ms-.*" "ext-ms-.*" "kernel32.dll" "user32.dll" "gdi32.dll" "msvcrt.dll" "advapi32.dll"
+        )
+        foreach(_file ${_deps})
+            file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}" TYPE SHARED_LIBRARY FILES "${_file}")
+        endforeach()
+
+        if(_notfound)
+            message(WARNING "警告：部分依赖未找到，可能需要手动拷贝: ${_notfound}")
+        endif()
+    ]])
+endif()
+
+# D. 配置 CPack 生成 ZIP 压缩包
+set(CPACK_PACKAGE_NAME "switch_auto_core")
+set(CPACK_GENERATOR "ZIP") # 生成 zip 即为绿色版
+set(CPACK_STRIP_FILES TRUE) # 移除调试符号减小体积
+include(CPack)
