@@ -4,8 +4,10 @@ project(switch_auto_core)
 # Fusion 是 C 语言库，这里保持 CXX 标准的同时，CMake 会自动处理 C 语言编译
 set(CMAKE_CXX_STANDARD 23)
 
-if(WIN32)
-    # Windows 平台配置
+if(MSVC)
+    # 这一行是全域设置，最为稳妥
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+    add_compile_options("/utf-8")
 else()
     include_directories(/opt/homebrew/include)
     link_directories(/opt/homebrew/lib)
@@ -153,16 +155,6 @@ target_link_libraries(switch_auto_core PRIVATE
 )
 
 set_directory_properties(PROPERTIES ADDITIONAL_CLEAN_FILES "${GEN_BASE_PATH}")
-
-# =========================================================
-# 6. 绿色打包配置 (Windows/Linux 自动搜集依赖)
-# =========================================================
-
-if(MSVC)
-    set_target_properties(switch_auto_core PROPERTIES
-            MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>"
-    )
-endif()
 
 # B. 定义安装目标
 install(TARGETS switch_auto_core RUNTIME DESTINATION .)
