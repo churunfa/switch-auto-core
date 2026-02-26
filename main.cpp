@@ -58,6 +58,10 @@ int main(int argc, char** argv) {
     #ifdef _WIN32
     SetEnvironmentVariableA("SDL_ASSERT", "always_ignore");
     SDL_SetAssertionHandler(nullptr, nullptr);
+    // 强制设置控制台输出为 UTF-8
+    SetConsoleOutputCP(CP_UTF8);
+    // 强制设置控制台输入为 UTF-8 (可选)
+    SetConsoleCP(CP_UTF8);
     #else
     #endif
     
