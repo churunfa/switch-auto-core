@@ -121,6 +121,7 @@ public:
 
 class ControllerMonitor {
 public:
+    std::atomic<bool> isRunning{false};
     static ControllerMonitor& getInstance() {
         static ControllerMonitor instance;
         return instance;
@@ -135,16 +136,7 @@ public:
         // 已通过环境变量在 main.cpp 中设置 SDL_ASSERT_LEVEL=0
 
         isRunning = true;
-        workerThread = std::thread(&ControllerMonitor::threadLoop, this);
-    }
-
-    void stop() {
-        if (!isRunning) return;
-        isRunning = false;
-        if (workerThread.joinable()) {
-            workerThread.join();
-        }
-        std::cout << "=== 监听线程已停止 ===" << std::endl;
+        threadLoop();
     }
 
     // 获取手柄连接状态信息
@@ -226,8 +218,6 @@ public:
 private:
     // [SDL3] 类型变更为 SDL_Gamepad
     SDL_Gamepad* controller = nullptr;
-    std::atomic<bool> isRunning{false};
-    std::thread workerThread;
     GamepadStatus gamepad_status{};
 
     // [SDL3] 使用 COUNT 获取按键数量
@@ -256,7 +246,6 @@ private:
     }
 
     ~ControllerMonitor() {
-        stop();
         // [SDL3] CloseGamepad
         if (controller) SDL_CloseGamepad(controller);
         SDL_Quit();
@@ -423,7 +412,6 @@ private:
 
     // [SDL3] SDL_ControllerSensorEvent -> SDL_GamepadSensorEvent
     void processIMU(const SDL_GamepadSensorEvent& sensor) {
-        static std::atomic last_cnt = 0;
         static std::recursive_mutex imu_lock;
         std::lock_guard lock(imu_lock);
 

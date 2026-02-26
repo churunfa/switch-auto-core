@@ -26,6 +26,7 @@ void signal_handler(const int signal) {
     if (global_server) {
         global_server->Shutdown();
     }
+    ControllerMonitor::getInstance().isRunning = false;
 }
 
 void RunServer() {
@@ -73,11 +74,11 @@ int main(int argc, char** argv) {
     DatabaseManager::getInstance();
     SwitchControlLibrary::getInstance();
     CacheLoader::getInstance();
+    
+    std::thread server_thread(RunServer);
+    server_thread.detach();
+
     ControllerMonitor::getInstance().start();
-    
-    RunServer();
-    
-    ControllerMonitor::getInstance().stop();
     std::cout << "程序已退出" << std::endl;
     
     return 0;
