@@ -1,3 +1,6 @@
+# x64 Native Tools Command Prompt
+# cd C:\Users\churu\Desktop\code\botw-auto\switch-auto-core\release-build
+# powershell .\build-win.ps1
 # 设置执行策略（防止权限问题）
 if ((Get-ExecutionPolicy) -ne 'RemoteSigned') {
     Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process -Force
