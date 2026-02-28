@@ -1,54 +1,72 @@
-该项目负责与ESP32虚拟手柄交互，提供最基础最核心的功能。该项目通过gRPC将基础功能暴露出去，供web端操作。
+# Switch Auto Core
 
-同时也支持接收其他手柄的信号，与按键宏协调工作。
+`Switch Auto Core` 是整个 Switch 自动化控制系统的底层核心组件。它负责与基于 ESP32 的虚拟手柄硬件进行底层交互，并通过 gRPC 协议对外暴露核心控制接口，是连接硬件与前端应用的桥梁。
 
+---
 
-需要跟以下项目搭配部署
-ESP32固件：https://github.com/churunfa/SwitchProControllerEsp32S3
+## 🚀 项目定位
 
-web端服务代码：https://github.com/churunfa/switch-auto-web
+该项目专注于提供最基础、最核心的控制能力：
+- **底层交互**：实现与 ESP32 虚拟手柄的高效通信。
+- **接口暴露**：通过 **gRPC** 将手柄控制逻辑抽象化，供 Web 端调用。
+- **信号协调**：支持接收物理手柄信号，并与自定义的按键宏逻辑协同工作。
 
+---
 
-其他项目：
+## 🏗 生态系统（配套组件）
 
-前端代码：https://github.com/churunfa/switch-auto-app  （当前已集成到web端代码中）
+为了实现完整功能，本项目建议与以下组件配套使用：
 
-小程序（当前在备案中，预计3月份上架，可以提前申请体验名额）：
+* **ESP32 固件**: [SwitchProControllerEsp32S3](https://github.com/churunfa/SwitchProControllerEsp32S3) (硬件核心)
+* **Web 服务端**: [switch-auto-web](https://github.com/churunfa/switch-auto-web) (业务逻辑层)
+* **前端代码**: [switch-auto-app](https://github.com/churunfa/switch-auto-app) (目前已集成至 Web 端代码中)
 
-![IMG_4161](https://github.com/user-attachments/assets/11078e27-209d-46ba-b93d-905ff5c5d91e)
+---
 
+## ✨ 核心功能展示
 
-pc端操作页面：
+### 1. PC 端操作页面
 
-1、基础按键模拟：该页面包含所有基础按键，可以进行简单的触发和释放操作。ps:左遥感旋转一圈为废案，当前不可用，后期会删除。
+| 功能模块 | 说明 | 界面预览 |
+| :--- | :--- | :--- |
+| **基础按键模拟** | 提供全键位模拟操作，支持触发与释放。*(注：左摇杆旋转一周为废弃功能，后续将移除)* | <img src="https://github.com/user-attachments/assets/7cc6c6c6-265d-445f-8175-bcd2d0b32a1c" width="450" /> |
+| **拓扑图配置** | 毫秒级精准按键编排，支持可视化逻辑连线，轻松创建复杂宏脚本。 | <img src="https://github.com/user-attachments/assets/c44a8534-5a57-4155-9238-aea9d613170f" width="450" /> |
+| **按键绑定映射** | 自由修改物理手柄映射，支持“功能键 + 拓扑宏”的组合触发逻辑。 | <img src="https://github.com/user-attachments/assets/f88bd620-0543-4f7d-9fa2-000e1838719f" width="450" /> |
+| **斯普拉遁涂鸦** | 自动将图片转换为单色位图，全自动控制手柄在游戏中进行涂鸦绘制。 | <img src="https://github.com/user-attachments/assets/f465a184-8ff8-485d-83e0-c5553078ac4c" width="450" /> |
 
-<img width="1725" height="945" alt="image" src="https://github.com/user-attachments/assets/7cc6c6c6-265d-445f-8175-bcd2d0b32a1c" />
+---
 
-2、拓扑图配置页面：该页面用于配置按键宏，可以毫秒级精准进行按键编排
+### 2. 小程序端 (移动端便捷控制)
 
-<img width="3448" height="1894" alt="image" src="https://github.com/user-attachments/assets/c44a8534-5a57-4155-9238-aea9d613170f" />、
+> **🔔 状态更新**：小程序当前正在备案中，预计 3 月份正式上架。
+> **🎁 提前体验**：扫描下方二维码可申请提前体验名额。
+> 
+> <img src="https://github.com/user-attachments/assets/11078e27-209d-46ba-b93d-905ff5c5d91e" width="165" /> <img src="https://github.com/user-attachments/assets/a8552bf5-4d78-4386-be38-1aacaea72c9b" width="165" />
 
-3、按键绑定：当连接手柄时，可以在这里修改按键映射。也可以进行功能键设置和拓扑图宏绑定，当前宏按键触发逻辑为 按住功能键再按拓扑图宏按键触发
+#### 移动端亮点：
+* **远程唤醒**：支持远程唤醒 NS (目前已适配 NS2)。
+* **脚本循环**：支持将特定拓扑宏写入硬件，**脱离 PC** 实现自动化循环执行。
+* **固件更新**：通过手机端 OTA 直接为虚拟手柄更新最新版固件。
+* **NS2 唤醒配置**：支持读取真实手柄信息（贴近感应或手动输入）以完成唤醒授权。
 
-<img width="1722" height="953" alt="image" src="https://github.com/user-attachments/assets/f88bd620-0543-4f7d-9fa2-000e1838719f" />
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/c1331a6c-3df2-4f31-8da0-f8b12bc1808a" width="180" alt="首页" />
+  <img src="https://github.com/user-attachments/assets/fdb1b80d-8914-488b-8c71-eecbbf7fed49" width="180" alt="上传" />
+  <img src="https://github.com/user-attachments/assets/73d456d2-afea-4ebd-a725-00005f2f7c1e" width="180" alt="更新" />
+  <img src="https://github.com/user-attachments/assets/b0179d5a-1a1e-4752-93c2-5940b5d8f831" width="180" alt="唤醒" />
+</p>
 
-4、斯普拉遁涂鸦绘制：可以将图片自动转化为单色位图，并全自动进行涂鸦绘制
+---
 
-<img width="3438" height="1900" alt="image" src="https://github.com/user-attachments/assets/f465a184-8ff8-485d-83e0-c5553078ac4c" />
+## 🛒 硬件及全家桶套餐
 
-小程序：
-1、首页：唤醒NS(手机远程唤醒NS-当前只支持NS2)、重启(重启虚拟手柄)、连接手柄(Switch主机要求输入L+R再按A切换手柄时，可以通过这里操作)、脚本循环（支持将特定拓扑图宏写入虚拟手柄，控制宏循环执行）、脚本停止（停止宏循环）
+以上功能均可基于本项目自行部署使用。如果您希望获得“开箱即用”的体验，可以关注我们的 **ESP32 开发版成品套餐**（购买链接上架后补充）。
 
-<img width="603" height="1311" alt="IMG_4163" src="https://github.com/user-attachments/assets/c1331a6c-3df2-4f31-8da0-f8b12bc1808a" />
+**套餐包含：**
+1. ✅ **硬件**：预装专属固件的 ESP32 开发版。
+2. ✅ **移动端**：微信小程序永久使用权限。
+3. ✅ **客户端**：集成了上述所有功能的专属控制台软件（支持 Windows / MacOS）。
 
-2、拓扑图上传：支持上传拓扑图，可以将其他人导出的拓扑宏配置粘贴到这里进行上传
-
-<img width="603" height="1311" alt="IMG_4164" src="https://github.com/user-attachments/assets/fdb1b80d-8914-488b-8c71-eecbbf7fed49" />
-
-3、固件更新：支持更新虚拟手柄的固件版本
-
-<img width="603" height="1311" alt="IMG_4166" src="https://github.com/user-attachments/assets/73d456d2-afea-4ebd-a725-00005f2f7c1e" />
-
-4、NS2唤醒配置：第一次唤醒需要写入真实设备的信息，支持将SwitchPro/JC手柄贴近虚拟手柄，自动失败设备信息。同时也支持手动写入。
-
-<img width="603" height="1311" alt="IMG_4167" src="https://github.com/user-attachments/assets/b0179d5a-1a1e-4752-93c2-5940b5d8f831" />
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/ea811ea9-988e-4fb8-b3a6-c5c652060dd0" width="600" alt="套餐示意图" />
+</p>
