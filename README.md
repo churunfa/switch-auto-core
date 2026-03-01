@@ -70,3 +70,5 @@
 <p align="center">
   <img src="https://github.com/user-attachments/assets/ea811ea9-988e-4fb8-b3a6-c5c652060dd0" width="600" alt="套餐示意图" />
 </p>
+
+视频介绍：https://www.bilibili.com/video/BV1SVPTzhEs2/?spm_id_from=333.1387.list.card_archive.click
