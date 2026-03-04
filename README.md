@@ -38,10 +38,7 @@
 
 ### 2. 小程序端 (移动端便捷控制)
 
-> **🔔 状态更新**：小程序当前正在备案中，预计 3 月份正式上架。
-> **🎁 提前体验**：扫描下方二维码可申请提前体验名额。
-> 
-> <img src="https://github.com/user-attachments/assets/11078e27-209d-46ba-b93d-905ff5c5d91e" width="165" /> <img src="https://github.com/user-attachments/assets/a8552bf5-4d78-4386-be38-1aacaea72c9b" width="165" />
+> <img src="https://github.com/user-attachments/assets/11078e27-209d-46ba-b93d-905ff5c5d91e" width="165" />
 
 #### 移动端亮点：
 * **远程唤醒**：支持远程唤醒 NS (目前已适配 NS2)。
