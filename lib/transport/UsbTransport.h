@@ -175,41 +175,7 @@ public:
         }
     }
 
-    void serialRead() override {
-        static char temp_buf[10086];
-        static std::string line_buffer;
-
-        boost::system::error_code read_ec;
-        size_t bytes_read = 0;
-
-        // 结合 Boost.Asio 定时器和异步读取，实现带有 3ms 超时的读取
-        port->async_read_some(boost::asio::buffer(temp_buf, sizeof(temp_buf)),
-            [&](const boost::system::error_code& ec, std::size_t bytes) {
-                read_ec = ec;
-                bytes_read = bytes;
-            });
-
-        io_context.restart();
-        // 运行 3ms。如果在这 3ms 内读到了数据，run_for 也会提前返回或继续执行回调。
-        io_context.run_for(std::chrono::milliseconds(3));
-
-        // 如果 3ms 后事件循环还没停止（代表还没有读到数据），取消读取操作
-        if (!io_context.stopped()) {
-            port->cancel();
-            io_context.run(); // 消费掉被取消的回调事件
-        }
-
-        if (bytes_read > 0 && !read_ec) {
-            line_buffer.append(temp_buf, bytes_read);
-
-            size_t pos = 0;
-            while ((pos = line_buffer.find('\n')) != std::string::npos) {
-                std::string distinct_line = line_buffer.substr(0, pos + 1);
-                std::cout << "接收到数据:" << distinct_line;
-                line_buffer.erase(0, pos + 1);
-            }
-        }
-    }
+    void serialRead() override {}
 };
 
 #endif //SWITCH_AUTO_CORE_USBTRANSPORT_H
