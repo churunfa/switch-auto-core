@@ -125,6 +125,8 @@ set(ALL_SOURCES
         src/repo/base/ButtonBinding.h
         src/cache/ButtonBindingCache.h
         src/serial/GraphSerial.h
+        lib/transport/ITransport.h
+        lib/transport/UsbTransport.h
 )
 
 add_executable(switch_auto_core ${ALL_SOURCES})

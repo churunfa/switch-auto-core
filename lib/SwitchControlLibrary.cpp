@@ -6,12 +6,8 @@
 #include "SwitchControlLibrary.h"
 #include <boost/asio.hpp>
 #include <iostream>
-#include <cstring>
-#ifdef __APPLE__
-#include <termios.h>
-#include <sys/ioctl.h>
-#include <IOKit/serial/ioss.h>
-#endif
+
+#include "transport/UsbTransport.h"
 
 long long getCurrentTime() {
     const auto now = std::chrono::system_clock::now();
@@ -46,70 +42,11 @@ SwitchControlLibrary::~SwitchControlLibrary() {
     }
 }
 
-void SwitchControlLibrary::initSerial() {
-    std::cout << "初始化连接:" << port_name << std::endl;
-    if (port_name.empty()) {
-        std::cout << "端口名称为空" << std::endl;
-        return;
-    }
-
-    try {
-        if (port && port->is_open()) {
-            port->close();
-        }
-
-        port = std::make_unique<boost::asio::serial_port>(io_context, port_name);
-
-        // 配置其他常规参数
-        port->set_option(boost::asio::serial_port_base::character_size(8));
-        port->set_option(boost::asio::serial_port_base::parity(boost::asio::serial_port_base::parity::none));
-        port->set_option(boost::asio::serial_port_base::stop_bits(boost::asio::serial_port_base::stop_bits::one));
-        port->set_option(boost::asio::serial_port_base::flow_control(boost::asio::serial_port_base::flow_control::none));
-
-        // --- 处理波特率 ---
-#ifdef __APPLE__
-        // macOS 下使用底层 ioctl 设置非标准的高波特率
-        const int fd = port->native_handle();
-        speed_t speed = 3000000;
-        if (ioctl(fd, IOSSIOSPEED, &speed) == -1) {
-            std::cout << "[警告] macOS 自定义波特率 3000000 设置失败，可能会通信异常" << std::endl;
-        } else {
-            std::cout << "macOS 波特率 3000000 设置成功" << std::endl;
-        }
-#else
-        // Windows 和 Linux 下，Boost 通常能直接处理高波特率
-        port->set_option(boost::asio::serial_port_base::baud_rate(3000000));
-#endif
-        // -----------------
-
-        std::cout << "连接初始化成功" << std::endl;
-    } catch (const boost::system::system_error& e) {
-        std::cout << "打开端口失败: " << e.what() << std::endl;
-        port.reset();
-    }
-}
 
 void SwitchControlLibrary::cleanup() {
-    // 1. 停止后台线程 (如果正在运行)
-    port_name = "";
-
-    // 2. 释放串口资源
-    if (port && port->is_open()) {
-        boost::system::error_code ec;
-
-        // 【核心修改】：显式声明一个变量接收 close 的返回值！
-
-        // 判断返回值，彻底满足 Clang-Tidy 对 "返回值不可忽略" 的要求
-        if (const boost::system::error_code return_ec = port->close(ec)) {
-            std::cout << "[警告] 关闭串口时出现异常: " << return_ec.message() << std::endl;
-        } else {
-            std::cout << "[系统] 串口已正常关闭。" << std::endl;
-        }
-
-        port.reset();    // 释放 unique_ptr
-        std::cout << "[系统] 串口资源清理完毕。" << std::endl;
+    if (transport) {
+        transport -> close();
     }
-
     // 3. 重置状态标记
     {
         std::lock_guard lock(reportMtx);
@@ -118,15 +55,32 @@ void SwitchControlLibrary::cleanup() {
     }
 }
 
+void SwitchControlLibrary::init() {
+    // 1. 尝试初始化 USB
+    if (transport == nullptr) {
+        transport = new UsbTransport();
+    }
+    if (!transport->connect()) {
+        printf("USB 未连接，尝试蓝牙...\n");
+
+        // 2. 尝试初始化蓝牙
+        // transport = new BluetoothTransport();
+        // if (!transport->connect()) {
+        //     printf("蓝牙连接失败。\n");
+        // }
+    }
+}
+
+bool SwitchControlLibrary::connected() const {
+    return transport != nullptr && transport->isConnected();
+}
+
 void SwitchControlLibrary::loop() {
     while (running) {
-        if (port_name.empty()) {
-            port_name = SerialPort::AutoDetectPort();
-            if (!port_name.empty()) {
-                initSerial();
-            }
+        if (!connected()) {
+            init();
         }
-        if (port_name.empty() || !port || !port->is_open()) {
+        if (!connected()) {
             std::this_thread::sleep_for(std::chrono::seconds(1));
             continue;
         }
@@ -141,10 +95,10 @@ void SwitchControlLibrary::loop() {
 
 void SwitchControlLibrary::wakeUp() const {
     constexpr static uint8_t wakeUpData[] = {0xAA, 0x55, 0x04, 0x00, 0x04};
-    if (!port || !port->is_open()) return;
+    if (!connected()) return;
 
     try {
-        boost::asio::write(*port, boost::asio::buffer(wakeUpData, 5));
+        transport->send(wakeUpData, 5);
     } catch (const boost::system::system_error&) {
         std::cout << "发送失败" << std::endl;
     }
@@ -152,9 +106,7 @@ void SwitchControlLibrary::wakeUp() const {
 
 void SwitchControlLibrary::sendReport() {
     std::lock_guard lock(reportMtx);
-    if (!port || !port->is_open()) {
-        return;
-    }
+    if (!connected()) return;
     if (memcmp(&lastSwitchReport, &switchReport, reportSize) == 0) {
         return;
     }
@@ -168,7 +120,7 @@ void SwitchControlLibrary::sendReport() {
     buffer[3+reportSize] = checkSum;
 
     try {
-        boost::asio::write(*port, boost::asio::buffer(buffer.data(), 2 + 1 + reportSize + 1));
+        transport->send(buffer.data(), 2 + 1 + reportSize + 1);
         // 更新lastSwitchReport
         memcpy(&lastSwitchReport, &switchReport, sizeof(SwitchProReport));
     } catch (const boost::system::system_error&) {
@@ -178,12 +130,10 @@ void SwitchControlLibrary::sendReport() {
 
 void SwitchControlLibrary::sendBytes(const void *buf, const size_t count, const unsigned int timeout_ms) {
     std::lock_guard lock(reportMtx);
-    if (!port || !port->is_open()) return;
+    if (!connected()) return;
 
     try {
-        // Boost.Asio 原生的同步 write 并不直接支持 timeout。
-        // 但串口发送通常会立即完成。如需严格超时，需用 async_write + 定时器处理。
-        boost::asio::write(*port, boost::asio::buffer(buf, count));
+        transport->send(buf, count);
     } catch (const boost::system::system_error&) {
         std::cout << "发送失败" << std::endl;
     }
@@ -380,7 +330,7 @@ void SwitchControlLibrary::resetRightAnalog() {
 void SwitchControlLibrary::delayTest() {
     std::lock_guard lock(reportMtx);
 
-    while (port_name.empty() || !port || !port->is_open()) {
+    while (!connected()) {
         std::cout << "未连接" << std::endl;
         std::this_thread::sleep_for(std::chrono::seconds(1));
     }
@@ -388,16 +338,16 @@ void SwitchControlLibrary::delayTest() {
 
     buffer[2] = 1;
     try {
-        boost::asio::write(*port, boost::asio::buffer(buffer.data(), 49));
+        transport->send(buffer.data(), 49);
     } catch (const boost::system::system_error&) {
         std::cout << "发送失败" << std::endl;
     }
     const long long sendFinishedTime = getCurrentTime();
 
-    uint8_t delayTest[45] = {0};
+    const uint8_t delayTest[45] = {0};
     try {
         // 同步阻塞读取，直到填满 45 字节
-        boost::asio::read(*port, boost::asio::buffer(delayTest, 45));
+        transport->send(delayTest, 45);
     } catch (const boost::system::system_error& e) {
          std::cout << "读取失败: " << e.what() << std::endl;
     }
@@ -412,42 +362,9 @@ void SwitchControlLibrary::delayTest() {
     std::cout << "消息处理耗时:" << sendFinishedTime - startTime << ",消息发送耗时" << (sendTime - startTime)/2 << std::endl;
 }
 
-char temp_buf[1008611];
-std::string line_buffer;
-
-void SwitchControlLibrary::serialRead() { // 注意：去掉了 const，因为要操作非 const 的 io_context
-    if (!port || !port->is_open()) return;
-
-    boost::system::error_code read_ec;
-    size_t bytes_read = 0;
-
-    // 结合 Boost.Asio 定时器和异步读取，实现带有 3ms 超时的读取
-    port->async_read_some(boost::asio::buffer(temp_buf, sizeof(temp_buf)),
-        [&](const boost::system::error_code& ec, std::size_t bytes) {
-            read_ec = ec;
-            bytes_read = bytes;
-        });
-
-    io_context.restart();
-    // 运行 3ms。如果在这 3ms 内读到了数据，run_for 也会提前返回或继续执行回调。
-    io_context.run_for(std::chrono::milliseconds(3));
-
-    // 如果 3ms 后事件循环还没停止（代表还没有读到数据），取消读取操作
-    if (!io_context.stopped()) {
-        port->cancel();
-        io_context.run(); // 消费掉被取消的回调事件
-    }
-
-    if (bytes_read > 0 && !read_ec) {
-        line_buffer.append(temp_buf, bytes_read);
-
-        size_t pos = 0;
-        while ((pos = line_buffer.find('\n')) != std::string::npos) {
-            std::string distinct_line = line_buffer.substr(0, pos + 1);
-            std::cout << "接收到数据:" << distinct_line;
-            line_buffer.erase(0, pos + 1);
-        }
-    }
+void SwitchControlLibrary::serialRead() const {
+    if (!connected()) return;
+    transport->serialRead();
 }
 
 SwitchControlLibrary& SwitchControlLibrary::getInstance() {

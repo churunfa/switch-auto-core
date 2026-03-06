@@ -11,7 +11,7 @@
 #include <boost/asio.hpp>
 
 #include "SwitchReport.h"
-#include "SerialPort.h"
+#include "transport/ITransport.h"
 
 typedef enum {
     BUTTON_Y = 0,
@@ -67,7 +67,7 @@ public:
     void sendVector(const std::vector<uint8_t>& in_buf, uint8_t type);
     void sendStr(const std::string& str, uint8_t type);
     void delayTest();
-    void serialRead();
+    void serialRead() const;
 
     static SwitchControlLibrary& getInstance();
 
@@ -78,8 +78,6 @@ private:
     SwitchProReport switchReport;
     SwitchProReport lastSwitchReport;
     uint8_t reportSize;
-    SerialPort serial;
-    std::string port_name;
     std::thread worker;
     std::recursive_mutex reportMtx;
     std::atomic<bool> running{false};
@@ -87,13 +85,11 @@ private:
     uint8_t header[2]={0xAA, 0x55};
     std::vector<uint8_t> buffer;
     long long imuLastCollectTime;
-    // 添加 Asio 的 io_context
-    boost::asio::io_context io_context;
+    ITransport* transport = nullptr;
 
-    std::unique_ptr<boost::asio::serial_port> port;
-
-    void initSerial();
     void cleanup();
+    void init();
+    bool connected() const;
     void loop();
     void setIMUCore(int16_t accX, int16_t accY, int16_t accZ, int16_t gyroX, int16_t gyroY, int16_t gyroZ);
     static void setAnalogX(SwitchAnalog& stick, uint16_t x);
