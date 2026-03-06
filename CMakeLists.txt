@@ -35,6 +35,23 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(sqlite_orm glaze)
 
+set(SIMPLEBLE_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(SIMPLEBLE_TESTS OFF CACHE BOOL "" FORCE)
+set(SIMPLEBLE_LIBRARY_TYPE STATIC CACHE INTERNAL "")
+
+include(FetchContent)
+FetchContent_Declare(
+        simpleble
+        GIT_REPOSITORY https://github.com/OpenBluetoothToolbox/SimpleBLE.git
+        GIT_TAG v0.12.1
+)
+
+FetchContent_GetProperties(simpleble)
+if(NOT simpleble_POPULATED)
+    FetchContent_Populate(simpleble)
+    # 核心修正：指向包含 CMakeLists.txt 的子目录
+    add_subdirectory(${simpleble_SOURCE_DIR}/simpleble ${simpleble_BINARY_DIR})
+endif()
 
 # ---------------------------------------------------------
 # 1. 查找依赖 (Config 模式)
@@ -154,7 +171,17 @@ target_link_libraries(switch_auto_core PRIVATE
         $<$<NOT:$<TARGET_EXISTS:unofficial::sqlite3::sqlite3>>:SQLite::SQLite3>
         sqlite_orm::sqlite_orm
         SDL3::SDL3
+        simpleble
 )
+
+if(APPLE)
+    target_link_libraries(switch_auto_core PRIVATE
+            "-framework Foundation"
+            "-framework CoreBluetooth"
+            "-framework IOBluetooth"
+            "-framework AppKit"
+    )
+endif()
 
 set_directory_properties(PROPERTIES ADDITIONAL_CLEAN_FILES "${GEN_BASE_PATH}")
 

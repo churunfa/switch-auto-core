@@ -140,7 +140,7 @@ public:
         return isConnected();
     }
     bool send(const std::vector<uint8_t>& data) override {
-        return boost::asio::write(*port, boost::asio::buffer(data.data(), data.size()));
+        return send(data.data(), data.size());
     }
     bool send(const void * str, const size_t len) override {
         return boost::asio::write(*port, boost::asio::buffer(str, len));

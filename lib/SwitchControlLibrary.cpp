@@ -7,6 +7,7 @@
 #include <boost/asio.hpp>
 #include <iostream>
 
+#include "transport/BluetoothTransport.h"
 #include "transport/UsbTransport.h"
 
 long long getCurrentTime() {
@@ -56,18 +57,20 @@ void SwitchControlLibrary::cleanup() {
 }
 
 void SwitchControlLibrary::init() {
+    printf("开始初始化\n");
     // 1. 尝试初始化 USB
     if (transport == nullptr) {
         transport = new UsbTransport();
     }
-    if (!transport->connect()) {
+
+    if (!transport->isConnected()) {
         printf("USB 未连接，尝试蓝牙...\n");
 
         // 2. 尝试初始化蓝牙
-        // transport = new BluetoothTransport();
-        // if (!transport->connect()) {
-        //     printf("蓝牙连接失败。\n");
-        // }
+        transport = new BluetoothTransport();
+        if (!transport->isConnected()) {
+            printf("蓝牙连接失败。\n");
+        }
     }
 }
 
@@ -99,8 +102,9 @@ void SwitchControlLibrary::wakeUp() const {
 
     try {
         transport->send(wakeUpData, 5);
-    } catch (const boost::system::system_error&) {
+    } catch (const std::exception&) {
         std::cout << "发送失败" << std::endl;
+        transport->close();
     }
 }
 
@@ -123,8 +127,9 @@ void SwitchControlLibrary::sendReport() {
         transport->send(buffer.data(), 2 + 1 + reportSize + 1);
         // 更新lastSwitchReport
         memcpy(&lastSwitchReport, &switchReport, sizeof(SwitchProReport));
-    } catch (const boost::system::system_error&) {
+    } catch (const std::exception&) {
         std::cout << "发送失败" << std::endl;
+        transport->close();
     }
 }
 
@@ -134,8 +139,9 @@ void SwitchControlLibrary::sendBytes(const void *buf, const size_t count, const 
 
     try {
         transport->send(buf, count);
-    } catch (const boost::system::system_error&) {
+    } catch (const std::exception&) {
         std::cout << "发送失败" << std::endl;
+        transport->close();
     }
 }
 
@@ -339,8 +345,9 @@ void SwitchControlLibrary::delayTest() {
     buffer[2] = 1;
     try {
         transport->send(buffer.data(), 49);
-    } catch (const boost::system::system_error&) {
+    } catch (const std::exception&) {
         std::cout << "发送失败" << std::endl;
+        transport->close();
     }
     const long long sendFinishedTime = getCurrentTime();
 
@@ -348,7 +355,7 @@ void SwitchControlLibrary::delayTest() {
     try {
         // 同步阻塞读取，直到填满 45 字节
         transport->send(delayTest, 45);
-    } catch (const boost::system::system_error& e) {
+    } catch (const std::exception& e) {
          std::cout << "读取失败: " << e.what() << std::endl;
     }
 
