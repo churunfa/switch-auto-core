@@ -14,8 +14,8 @@
 
 class BluetoothTransport : public ITransport {
     // 常量定义，匹配 vSwitch Pro Controller 硬件配置
-    const std::string SERVICE_UUID = "6E400001-B5A3-F393-E0A9-E50E24DCCA9E";
-    const std::string CHARACTERISTIC_UUID = "6E400002-B5A3-F393-E0A9-E50E24DCCA9E";
+    const std::string SERVICE_UUID = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
+    const std::string CHARACTERISTIC_UUID = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
     const std::string TARGET_NAME = "vSwitch Pro Controller";
 
     std::unique_ptr<SimpleBLE::Peripheral> _peripheral = nullptr;
@@ -85,7 +85,7 @@ public:
 
         // 第二步：服务表发现检查
         // 如果 services 列表为空，说明虽然物理连上了，但 GATT 还没同步完成
-        if (_peripheral->services().empty()) {
+        if (_peripheral == nullptr || _peripheral->services().empty()) {
             std::cout << "GATT 服务表未就绪..." << std::endl;
             close();
             return false;

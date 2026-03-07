@@ -8,6 +8,8 @@ if(MSVC)
     # 这一行是全域设置，最为稳妥
     set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
     add_compile_options("/utf-8")
+    add_compile_options("/await:strict")
+    add_compile_definitions(_WIN32_WINNT=0x0A00 WINVER=0x0A00)
 else()
     include_directories(/opt/homebrew/include)
     link_directories(/opt/homebrew/lib)

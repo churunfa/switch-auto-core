@@ -102,8 +102,8 @@ void SwitchControlLibrary::wakeUp() const {
 
     try {
         transport->send(wakeUpData, 5);
-    } catch (const std::exception&) {
-        std::cout << "发送失败" << std::endl;
+    } catch (const std::exception& e) {
+        std::cout << "发送失败："<<e.what() << std::endl;
         transport->close();
     }
 }
@@ -127,8 +127,8 @@ void SwitchControlLibrary::sendReport() {
         transport->send(buffer.data(), 2 + 1 + reportSize + 1);
         // 更新lastSwitchReport
         memcpy(&lastSwitchReport, &switchReport, sizeof(SwitchProReport));
-    } catch (const std::exception&) {
-        std::cout << "发送失败" << std::endl;
+    } catch (const std::exception& e) {
+        std::cout << "发送失败："<<e.what() << std::endl;
         transport->close();
     }
 }
@@ -139,8 +139,8 @@ void SwitchControlLibrary::sendBytes(const void *buf, const size_t count, const 
 
     try {
         transport->send(buf, count);
-    } catch (const std::exception&) {
-        std::cout << "发送失败" << std::endl;
+    } catch (const std::exception& e) {
+        std::cout << "发送失败："<<e.what() << std::endl;
         transport->close();
     }
 }
@@ -345,8 +345,8 @@ void SwitchControlLibrary::delayTest() {
     buffer[2] = 1;
     try {
         transport->send(buffer.data(), 49);
-    } catch (const std::exception&) {
-        std::cout << "发送失败" << std::endl;
+    } catch (const std::exception& e) {
+        std::cout << "发送失败："<<e.what() << std::endl;
         transport->close();
     }
     const long long sendFinishedTime = getCurrentTime();
