@@ -79,6 +79,7 @@ public:
     bool isConnected() override {
         // 第一步：基础连接检查
         if (!_peripheral || !_peripheral->is_connected()) {
+            close();
             return false;
         }
 
@@ -86,6 +87,7 @@ public:
         // 如果 services 列表为空，说明虽然物理连上了，但 GATT 还没同步完成
         if (_peripheral->services().empty()) {
             std::cout << "GATT 服务表未就绪..." << std::endl;
+            close();
             return false;
         }
         return true;
