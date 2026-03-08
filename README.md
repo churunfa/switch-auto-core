@@ -47,7 +47,7 @@
 * **NS2 唤醒配置**：支持读取真实手柄信息（贴近感应或手动输入）以完成唤醒授权。
 
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/c1331a6c-3df2-4f31-8da0-f8b12bc1808a" width="180" alt="首页" />
+  <img src="https://github.com/user-attachments/assets/06b7a8dc-565d-42f1-9a59-9a4f0c54f19d" width="180" alt="首页" />
   <img src="https://github.com/user-attachments/assets/fdb1b80d-8914-488b-8c71-eecbbf7fed49" width="180" alt="上传" />
   <img src="https://github.com/user-attachments/assets/73d456d2-afea-4ebd-a725-00005f2f7c1e" width="180" alt="更新" />
   <img src="https://github.com/user-attachments/assets/b0179d5a-1a1e-4752-93c2-5940b5d8f831" width="180" alt="唤醒" />
