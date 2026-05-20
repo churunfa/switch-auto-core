@@ -55,17 +55,6 @@
 
 ---
 
-## 🛒 硬件及全家桶套餐
-
-以上功能均可基于本项目自行部署使用。如果您希望获得“开箱即用”的体验，可以关注我们的 **ESP32 开发版成品套餐**（https://e.tb.cn/h.iYG1toOrUpXmIRa?tk=tb9sUI5K565 ）。
-
-**套餐包含：**
-1. ✅ **硬件**：预装专属固件的 ESP32 开发版。
-2. ✅ **移动端**：微信小程序永久使用权限。
-3. ✅ **客户端**：集成了上述所有功能的专属控制台软件（支持 Windows / MacOS）。
-
 <p align="center">
   <img src="https://github.com/user-attachments/assets/ea811ea9-988e-4fb8-b3a6-c5c652060dd0" width="600" alt="套餐示意图" />
 </p>
-
-视频介绍：https://www.bilibili.com/video/BV1SVPTzhEs2/?spm_id_from=333.1387.list.card_archive.click
